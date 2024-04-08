@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ -n "$LAUNCHER" ];then
+  curl -o - $LAUNCHER$1
+else
+  echo "LAUNCHER not set"
+  exit 1
+fi

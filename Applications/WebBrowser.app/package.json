@@ -1,0 +1,9 @@
+{
+  "name": "WebBrowser",
+  "productName": "WebBrowser",
+  "version": "1.0.0",
+  "description": "WebBrowser App",
+  "main": "index.html",
+  "author": "onflapp",
+  "license": "MIT"
+}

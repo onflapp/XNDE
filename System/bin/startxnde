@@ -1,0 +1,17 @@
+#!/bin/bash
+
+function start_apps {
+  sleep 1
+  ./launch /System/DisplayServer.app
+  sleep 1
+  ./launch /Applications/Terminal.app
+}
+
+export KERNEL_PORT=3000
+export KERNEL_WSPORT=3001
+export DISPLAYSERVER_PORT=3002
+export LAUNCHER="http://localhost:$KERNEL_PORT"
+
+start_apps&
+
+node ./System/Kernel/main.js
