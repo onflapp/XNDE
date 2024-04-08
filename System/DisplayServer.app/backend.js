@@ -3,11 +3,11 @@ chrome.app.runtime.onLaunched.addListener(function(evt) {
   let port = f.split('.')[0];
   chrome.app.window.create('index.html?data='+port, {
     'outerBounds': {
-      'width': 400,
-      'height': 500
+      'width': 1024,
+      'height': 748
     }
   }, 
   function(w) {
-    //w.fullscreen();
+    w.fullscreen();
   });
 });

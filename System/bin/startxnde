@@ -1,16 +1,21 @@
 #!/bin/bash
 
 function start_apps {
-  sleep 1
-  ./launch /System/DisplayServer.app
-  sleep 1
-  ./launch /Applications/Terminal.app
+  sleep 10
+  launch /System/DisplayServer.app
+  sleep 10
+  launch /Applications/Terminal.app
 }
+
+B=`realpath "$0"`
+B=`dirname $B`
+cd "$B/../../"
 
 export KERNEL_PORT=3000
 export KERNEL_WSPORT=3001
 export DISPLAYSERVER_PORT=3002
 export LAUNCHER="http://localhost:$KERNEL_PORT"
+export PATH="$PWD/System/bin:$PATH"
 
 start_apps&
 

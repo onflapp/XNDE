@@ -8,4 +8,5 @@ if [ -z "$CHROME" ];then
   exit 1
 fi
 
-"$CHROME" --enable-widevine --silent-launch --load-and-launch-app=`pwd` "$1"
+DDIR="/tmp/$$.data"
+"$CHROME" --user-data-dir=$DDIR --enable-widevine --silent-launch --load-and-launch-app=`pwd` "$1"
