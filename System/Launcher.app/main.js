@@ -76,7 +76,8 @@ function ws_receive_message(connection) {
 function ws_client() {
   const sio = require('shared/client_ws');
 
-  sio.connect_client('ws://localhost:4000', 
+  let port = (process.env.KERNEL_WSPORT || 4000);
+  sio.connect_client('ws://localhost:'+port, 
     function(connection) {
       if (connection) {
         let name = registry.get_property('NAME');
@@ -93,6 +94,25 @@ function ws_client() {
   );
 }
 
+function web_server() {
+  const express = require('express');
+  const app = express();
+
+  app.get('/', (req, res) => {
+    res.send('Hello World!');
+  });
+
+  app.use('/', express.static('.'));
+
+  let server = app.listen(0,
+    function () {
+      let sport = server.address().port;
+      registry.set_property('HTTP_PORT', sport);
+      console.error(`web server ${sport}`);
+    }
+  );
+}
+
 global.route_message = route_message;
 
 registry.set_property('NAME', 'LAUNCHER');
@@ -105,3 +125,4 @@ process.on('SIGINT', function() {
 
 io_client();
 ws_client();
+web_server();

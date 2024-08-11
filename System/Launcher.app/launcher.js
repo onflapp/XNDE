@@ -1,16 +1,18 @@
 function exec_web_proc(path, main) {
-  const reg = require('./registry.js');
+  const reg = require('shared/registry');
   const base = reg.get_property('BASE_DIR');
-  const base_url = reg.get_property('BASE_URL');
-  
-  let u = base_url + path.substr(base.length) + '/' + main;
-  route_message({
-    target:'DISPLAY', 
+  const port = reg.get_property('HTTP_PORT');
+
+  let u = 'http://localhost:'+port+'/'+path+'/'+ main;
+  let msg = {
+    target:'DISPLAY',
+    command:'create_window',
     options:{
-      cmd:'show',
       url:u
     }
-  });
+  };
+
+  global.route_message(msg);
 }
 
 function exec_node_proc(path, main) {
@@ -21,7 +23,8 @@ function exec_node_proc(path, main) {
 
   let app = registry.get_object(path);
   if (app) {
-    console.log('exists already');
+    console.error('exists already');
+    cio.send_message(app.stdin, '.', 'reactivate');
   }
   else {
     app = proc.spawn('node', [main], {

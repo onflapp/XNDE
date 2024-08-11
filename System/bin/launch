@@ -1,8 +1,3 @@
-#!/bin/bash
+#!/bin/sh
 
-if [ -n "$LAUNCHER" ];then
-  curl -o - $LAUNCHER$1
-else
-  echo "LAUNCHER not set"
-  exit 1
-fi
+curl -o - "http://localhost:3000/dispatch?target=LAUNCHER&command=launch&options=$1"

@@ -61,6 +61,34 @@ function ws_server() {
   });
 }
 
+function handle_dispatch_request(req, res) {
+  console.log(req.query);
+
+  let target = req.query.target;
+  let command = req.query.command;
+  let options = req.query.options;
+
+  if (!target) {
+    target = '.';
+  }
+
+  if (options) {
+    try {
+      options = JSON.parse(options);
+    }
+    catch(ex) {
+      console.error(ex);
+    }
+  }
+
+  if (command) {
+    route_message({target:target,command:command,options:options});
+  }
+
+  res.writeHead(200);
+  res.end('done');
+}
+
 function web_server() {
   const reg = require('shared/registry');
   const express = require('express');
@@ -72,7 +100,8 @@ function web_server() {
   reg.set_property('BASE_URL', `http://localhost:${port}`);
   reg.set_property('BASE_DIR', process.cwd());
 
-  app.get('*', fshandler.handle_file_request);
+  app.get('/files/*', fshandler.handle_file_request);
+  app.get('/dispatch*', handle_dispatch_request);
 
   app.listen(port, 
     function() {

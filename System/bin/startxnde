@@ -1,4 +1,14 @@
-#!/bin/sh
+#!/bin/bash
+
+function start_kernel() {
+  node ./System/Kernel/main.js &
+  KERNEL_PID="$!"
+}
+
+function start_launcher() {
+  node ./System/Launcher.app/main.js &
+  LAUNCHER_PID="$!"
+}
 
 B=`realpath "$0"`
 B=`dirname $B`
@@ -7,7 +17,20 @@ cd "$B/../../"
 export KERNEL_PORT=3000
 export KERNEL_WSPORT=3001
 export DISPLAYSERVER_PORT=3002
-export LAUNCHER="http://localhost:$KERNEL_PORT"
 export PATH="$PWD/System/bin:$PATH"
 
-node ./System/Kernel/main.js
+start_kernel
+
+sleep 1
+start_launcher
+
+sleep 1
+launch System/Display.app
+
+sleep 2
+dispatch DISPLAY init_windowmanager "simple"
+
+sleep 1
+launch Applications/Terminal.app
+
+wait $KERNEL_PID

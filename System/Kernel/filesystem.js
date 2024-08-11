@@ -23,10 +23,9 @@ function entity_info(entity) {
   return rv;
 }
 
-exports.handle_file_request = function(req, res) {
-  const reg = require('./registry.js');
+function handle_file_request(req, res) {
+  const reg = require('shared/registry');
   const base = reg.get_property('BASE_DIR');
-  const launcher = require('./launcher.js');
   const path = require('path');
   const fs = require('fs');
 
@@ -41,7 +40,7 @@ exports.handle_file_request = function(req, res) {
     entity.name = path.basename(fullPath);
 
     if (entity.isDirectory() && entity.name.endsWith('.app')) {
-      launcher.launch_app(fullPath);
+      //launcher.launch_app(fullPath);
 
       res.writeHead(200);
       res.end('done');
@@ -66,4 +65,6 @@ exports.handle_file_request = function(req, res) {
     res.writeHead(404);
     res.end('path:' + fullPath + ' not found\n');
   }
-};
+}
+
+exports.handle_file_request = handle_file_request;

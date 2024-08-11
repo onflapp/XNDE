@@ -1,0 +1,3 @@
+#!/bin/sh
+
+curl -o - "http://localhost:3000/dispatch?target=$1&command=$2&options=$3"
