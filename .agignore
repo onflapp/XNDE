@@ -1,0 +1,15 @@
+node_modules
+dist
+build
+tags
+.git
+.tscache
+.deps
+.libs
+*.backup
+*.swp
+*~
+obj
+.gdb_history
+.DS_Store
+derived_src
