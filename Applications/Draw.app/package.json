@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@zklogic/draw.io": "^15.7.2-rc1"
+  }
+}

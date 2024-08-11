@@ -77,7 +77,7 @@ function handle_dispatch_request(req, res) {
       options = JSON.parse(options);
     }
     catch(ex) {
-      console.error(ex);
+      //console.error(ex);
     }
   }
 
