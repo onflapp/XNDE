@@ -1,0 +1,13 @@
+{
+  "name": "simple WM",
+  "productName": "simple WM",
+  "version": "1.0.1",
+  "description": "simple WM",
+  "main": "index.js",
+  "author": "OnFlApp",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "^3.7.1",
+    "jquery-ui": "^1.13.2"
+  }
+}

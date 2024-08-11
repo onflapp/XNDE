@@ -1,0 +1,11 @@
+{
+  "name": "shared API",
+  "productName": "share API",
+  "version": "1.0.0",
+  "description": "shared API",
+  "author": "OnFlApp",
+  "license": "MIT",
+  "dependencies": {
+    "websocket": "^1.0.34"
+  }
+}

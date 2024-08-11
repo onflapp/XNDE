@@ -1,0 +1,13 @@
+{
+  "name": "App Server",
+  "productName": "App Server",
+  "version": "1.0.01",
+  "description": "App Server",
+  "main": "main.js",
+  "author": "OnFlApp",
+  "license": "MIT",
+  "dependencies": {
+    "shared": "file:../Shared",
+    "express": "^4.17.1"
+  }
+}
