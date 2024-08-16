@@ -50,4 +50,4 @@ include_css("windowmanagers/simple/node_modules/jquery-ui/dist/themes/ui-darknes
 
 setTimeout(function() {
   init_workspace();
-}, 200);
+}, 2000);

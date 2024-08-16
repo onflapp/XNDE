@@ -1,6 +1,6 @@
 {
-  "name": "Hello World!",
-  "description": "My first Chrome App.",
+  "name": "XNDEDisplay",
+  "description": "XNDEDisplay App.",
   "version": "0.1",
   "manifest_version": 2,
   "permissions": [

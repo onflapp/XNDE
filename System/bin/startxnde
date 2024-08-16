@@ -27,10 +27,10 @@ start_launcher
 sleep 1
 launch System/Display.app
 
-sleep 2
+sleep 3
 dispatch DISPLAY init_windowmanager "simple"
 
-sleep 1
+sleep 6
 launch Applications/Terminal.app
 
 wait $KERNEL_PID

@@ -39,15 +39,17 @@ function ws_handle_connection(connection) {
   connection.on('message',
     function(message) {
       let str = message.utf8Data;
-      let i = str.indexOf('^[[');
-      if (i != -1) {
-        let a = str.match(/\^\[\[(\d+),(\d+)/);
-        ptty.resize(Number.parseInt(a[1]), Number.parseInt(a[2]));
-        str = str.replace(a[0], '');
-      }
-
       if (str) {
-        ptty.write(str);
+        let i = str.indexOf('^[[');
+        if (i != -1) {
+          let a = str.match(/\^\[\[(\d+),(\d+)/);
+          ptty.resize(Number.parseInt(a[1]), Number.parseInt(a[2]));
+          str = str.replace(a[0], '');
+        }
+
+        if (str) {
+          ptty.write(str);
+        }
       }
     }
   );

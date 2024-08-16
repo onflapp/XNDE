@@ -14,6 +14,10 @@ function create_window(options) {
   document.body.appendChild(wv);
 }
 
+function close() {
+
+}
+
 function init_windowmanager(name) {
   let wm = document.createElement('script');  
   wm.src = `windowmanagers/${name}/index.js`;
@@ -23,6 +27,7 @@ function init_windowmanager(name) {
 window.COMMANDS = {
   'print':print,
   'clear':clear,
+  'close':close,
   'create_window':create_window,
   'init_windowmanager':init_windowmanager
 };
