@@ -12,7 +12,7 @@ function exec_web_proc(path, main) {
     }
   };
 
-  global.route_message(msg);
+  global.route_message(msg, null);
 }
 
 function exec_node_proc(path, main) {
@@ -33,22 +33,29 @@ function exec_node_proc(path, main) {
 
     registry.set_object(path, app);
 
-    cio.receive_message(app.stdout, 
-      function(msg) {
-        global.route_message(msg, app); 
+    cio.receive_message(app, 
+      function(msg, cb) {
+        if (msg) {
+          console.error(msg);
+          global.message_router.route(msg, cb);
+        }
+        else {
+          cb(null);
+        }
       }
     );
 
     app.stderr.on('data',
       function(data) {
-        console.log(`stderr: ${data}`);
+        let s = (''+data).replace(/\n$/, '');
+        console.error(`[${s}]`);
       }
     );
 
     app.on('close',
       function(code) {
         registry.remove_all_objects(app);
-        console.log(`node process exited with code ${code}`);
+        console.error(`node process exited with code ${code}`);
       }
     );
   }

@@ -2,6 +2,7 @@ const mutil = require('shared/messages.js');
 const proc = require('child_process');
 const WebSocketServer = require('websocket').server;
 const http = require('http');
+const router = require('shared/router');
 
 CONNECTIONS = {};
 CHROME_APP = null;
@@ -22,6 +23,9 @@ function ws_server(cb) {
   wsServer.on('request', 
     function(request) {
       console.error('new display connection');
+      let msg = mutil.make_message('CORE', 'register', {name:'DISPLAY'});
+      console.log(mutil.encode_message(msg));
+
       let connection = request.accept(null, request.origin);
       CONNECTIONS[connection] = connection;
 
@@ -51,10 +55,9 @@ function io_client() {
   process.stdin.resume();
   process.stdin.setEncoding('utf8');
 
-  cio.receive_message(process.stdin,
-    function(msg) {
-      console.error(msg);
-      ws_send(mutil.make_message(msg.target, msg.command, msg.options));
+  cio.receive_message(process,
+    function(msg, cb) {
+      ws_send(mutil.encode_message(msg));
     }
   );
 }
@@ -78,7 +81,6 @@ ws_server(
   function(ws) {
     let wport = ws.address().port;
 
-    console.log(mutil.make_message('SERVICES', 'register', {name:'DISPLAY'}));
     console.error(`Display.service - port ${wport}`);
 
     CHROME_APP = chrome_app(wport);

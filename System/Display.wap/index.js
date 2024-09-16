@@ -6,6 +6,8 @@ display:{url:'url'}
 */
 
 function start_process() {
+  let router = new MessageRouter('DISPLAY', window.COMMANDS);
+
   let hostname = 'localhost';
   let port = 6001;
 
@@ -24,7 +26,14 @@ function start_process() {
   client.onmessage = function(evt) {
     let data = evt.data;
     let msg = parse_message(data);
-    dispatch_message(msg, window.COMMANDS);
+    router.route(msg, 
+      function(rv) {
+        if (rv) {
+          let s = make_message(msg);
+          client.send(s);
+        }
+      }
+    );
   };
 }
 

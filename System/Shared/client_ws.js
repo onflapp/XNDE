@@ -1,7 +1,7 @@
 const mutil = require('./messages.js');
 
-function send_message(connection, target, command, options) {
-  let l = mutil.make_message(target, command, options);
+function send_message(connection, msg) {
+  let l = mutil.encode_message(msg);
   if (l) {
     connection.sendUTF(l);
   }
@@ -21,7 +21,11 @@ function receive_message(connection, func) {
   connection.on('close', 
     function() {
       console.error('connection closed');
-      func(null);
+      if (func) {
+        func(null,
+          function(rv) {}
+        );
+      }
     }
   );
 
@@ -30,7 +34,13 @@ function receive_message(connection, func) {
       if (message.type === 'utf8') {
         let line = message.utf8Data;
         let msg = mutil.parse_message(line);
-        if (msg && func) func(msg);
+        if (msg && func) {
+          func(msg, 
+            function(rv) {
+              if (rv) send_message(connection, rv);
+            }
+          );
+        }
         else {
           console.error(line);
         }

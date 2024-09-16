@@ -1,3 +1,8 @@
 #!/bin/sh
 
-curl -o - "http://localhost:3000/dispatch?target=LAUNCHER&command=launch&options=$1"
+if [ -z "$1" ];then
+  echo "launch [application path]"
+  exit 1
+else
+  curl -o - "http://localhost:3000/dispatch?target=LAUNCHER&command=launch&options=$1"
+fi

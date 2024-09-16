@@ -1,37 +1,11 @@
 const mutil = require('shared/messages');
 const registry= require('shared/registry');
 const launcher= require('./launcher.js');
+const commands = require('./commands').commands;
+const router = require('shared/router');
 
-function route_message(msg, ctx) {
-  const sio = require('shared/client_ws');
-  const cio = require('shared/client_io');
-
-  console.error(msg);
-
-  if (msg.command == 'register' && ctx) {
-    registry.set_object(msg.options.name, ctx);
-
-    let con = registry.get_object('KERNEL');
-    sio.send_message(con, msg.target, msg.command, msg.options);
-  }
-  else if (msg.command == 'unregister') {
-  }
-  else if (msg.command == 'launch') {
-    let path = msg.options;
-    if (msg.options.url) path = msg.options.url;
-
-    launcher.launch_app(path);
-  }
-  else {
-    console.error(`look up [${msg.target}]`);
-    let app = registry.get_object(msg.target);
-    if (app) {
-      cio.send_message(app.stdin, msg.target, msg.command, msg.options);
-    }
-    else {
-      console.error('target not found!');
-    }
-  }
+function route_message(msg, cb) {
+  global.message_router.route(msg, cb);
 }
 
 function cleanup() {
@@ -48,12 +22,14 @@ function cleanup() {
 function io_client() {
   const cio = require('shared/client_io');
 
-  process.stdin.resume();
-  process.stdin.setEncoding('utf8');
-
-  cio.receive_message(process.stdin, 
-    function(msg) {
-      route_message(msg, null);
+  cio.receive_message(process, 
+    function(msg, cb) {
+      if (msg) {
+        route_message(msg, cb);
+      }
+      else {
+        cb(null);
+      }
     }
   );
 }
@@ -61,13 +37,14 @@ function io_client() {
 function ws_receive_message(connection) {
   const sio = require('shared/client_ws');
   sio.receive_message(connection, 
-    function(msg) {
+    function(msg, cb) {
       if (msg) {
-        route_message(msg, null);
+        route_message(msg, cb);
       }
       else {
-        cleanup();
-        process.exit(1);
+        cb(null);
+        //cleanup();
+        //process.exit(1);
       }
     }
   );
@@ -81,12 +58,19 @@ function ws_client() {
     function(connection) {
       if (connection) {
         let name = registry.get_property('NAME');
-        registry.set_object('KERNEL', connection);
+        global.message_router.register_target('CORE',
+          function(msg) {
+            sio.send_message(connection, msg);
+          }
+        );
 
-        sio.send_message(connection, 'SERVICES', 'register', {name:name});
+        let msg = mutil.make_message('CORE', 'register', {name:name});
+
+        sio.send_message(connection, msg);
         ws_receive_message(connection);
       }
       else {
+        global.message_router.unregister_target('CORE');
         cleanup();
         process.exit();
       }
@@ -113,8 +97,6 @@ function web_server() {
   );
 }
 
-global.route_message = route_message;
-
 registry.set_property('NAME', 'LAUNCHER');
 registry.set_property('BASE_DIR', process.cwd());
 
@@ -122,6 +104,10 @@ process.on('SIGINT', function() {
   cleanup();
   process.exit();
 });
+
+/* main */
+
+global.message_router = new router.MessageRouter('LAUNCHER', commands);
 
 io_client();
 ws_client();

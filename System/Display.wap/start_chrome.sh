@@ -38,7 +38,7 @@ touch "$DDIR/First Run"
 
 echo "" > "$LOCK"
 
-./system_wm.sh start&
+#./system_wm.sh start&
 
 "$CHROME" --user-data-dir=$DDIR --enable-widevine --silent-launch \
   --load-and-launch-app=`pwd` "$1" >/dev/null
