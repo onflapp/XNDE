@@ -41,12 +41,12 @@ COMMANDS = {
   'create_window':wm_create_window
 };
 
-include_script("windowmanagers/simple/node_modules/jquery/dist/jquery.min.js");
-include_script("windowmanagers/simple/node_modules/jquery-ui/dist/jquery-ui.min.js");
-include_script("windowmanagers/simple/window-manager.js");
+include_script("display_wm/simple/node_modules/jquery/dist/jquery.min.js");
+include_script("display_wm/simple/node_modules/jquery-ui/dist/jquery-ui.min.js");
+include_script("display_wm/simple/window-manager.js");
 
-include_css("windowmanagers/simple/window-manager.css");
-include_css("windowmanagers/simple/node_modules/jquery-ui/dist/themes/ui-darkness/jquery-ui.min.css");
+include_css("display_wm/simple/window-manager.css");
+include_css("display_wm/simple/node_modules/jquery-ui/dist/themes/ui-darkness/jquery-ui.min.css");
 
 setTimeout(function() {
   init_workspace();

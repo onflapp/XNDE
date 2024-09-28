@@ -1,4 +1,6 @@
-const mutils = require('./messages.js');
+if (typeof require != 'undefined') {
+  const mutils = require('./messages.js');
+}
 
 class MessageRouter {
   targets = {};

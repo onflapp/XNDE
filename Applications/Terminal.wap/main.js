@@ -11,7 +11,10 @@ function route_message(msg) {
 function send_display_msg() {
   let sport = registry.get_property('HTTP_PORT');
   let wport = registry.get_property('WS_PORT');
-  console.log(mutil.make_message('DISPLAY', 'create_window',{'url':`http://localhost:${sport}/index.html?data=${wport}`}));
+  let m = mutil.make_message('DISPLAY', 'create_window',{'url':`http://localhost:${sport}/index.html?data=${wport}`});
+  let s = mutil.encode_message(m);
+
+  console.log(s);
 }
 
 function ws_handle_connection(connection) {
@@ -114,8 +117,8 @@ function io_client() {
   process.stdin.resume();
   process.stdin.setEncoding('utf8');
 
-  cio.receive_message(process.stdin, 
-    function(msg) {
+  cio.receive_message(process, 
+    function(msg, cb) {
       route_message(msg);
     }
   );

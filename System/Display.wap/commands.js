@@ -1,11 +1,11 @@
 function print(str, cb) {
   document.body.append(str);
-  cb();
+  cb(make_ack());
 }
 
 function clear(options, cb) {
   document.body.innerHTML = '';
-  cb();
+  cb(make_ack());
 }
 
 function create_window(options, cb) {
@@ -18,18 +18,23 @@ function create_window(options, cb) {
   if (url) wv.src = url;
   
   document.body.appendChild(wv);
-  cb();
+  cb(make_ack());
 }
 
 function close(options, cb) {
-  cb();
+  cb(make_ack());
 }
 
-function init_windowmanager(name, cb) {
+function init_wm(name, cb) {
   let wm = document.createElement('script');  
-  wm.src = `windowmanagers/${name}/index.js`;
+  wm.src = `display_wm/${name}/index.js`;
   document.head.appendChild(wm);
-  cb();
+  
+  setTimeout(
+    function() {
+      cb(make_ack());
+    },1000
+  );
 }
 
 window.COMMANDS = {
@@ -37,5 +42,5 @@ window.COMMANDS = {
   'clear':clear,
   'close':close,
   'create_window':create_window,
-  'init_windowmanager':init_windowmanager
+  'init_wm':init_wm
 };

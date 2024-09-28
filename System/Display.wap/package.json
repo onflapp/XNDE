@@ -7,8 +7,8 @@
   "author": "onflapp",
   "license": "MIT",
   "dependencies": {
-    "shared": "file:../Shared",
     "express": "^4.17.1",
+    "shared": "file:../Shared",
     "websocket": "^1.0.34"
   }
 }

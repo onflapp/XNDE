@@ -1,13 +1,22 @@
 #!/bin/bash
 
-function start_kernel() {
-  node ./System/Kernel/main.js &
+function cleanup() {
+  kill $KERNEL_PID
+  kill $LAUNCHER_PID
+}
+
+trap cleanup SIGINT SIGTERM
+
+function start_dispatcher() {
+  node ./System/Dispatcher/main.js &
   KERNEL_PID="$!"
+  sleep 2
 }
 
 function start_launcher() {
-  node ./System/Launcher.app/main.js &
+  node ./System/Launcher.wap/main.js &
   LAUNCHER_PID="$!"
+  sleep 2
 }
 
 B=`realpath "$0"`
@@ -19,18 +28,14 @@ export KERNEL_WSPORT=3001
 export DISPLAYSERVER_PORT=3002
 export PATH="$PWD/System/bin:$PATH"
 
-start_kernel
-
-sleep 1
+start_dispatcher
 start_launcher
 
-sleep 1
-launch System/Display.app
+launch System/Display.wap
+sleep 2
+dispatch DISPLAY init_wm-sync "simple"
 
-sleep 3
-dispatch DISPLAY init_windowmanager "simple"
-
-sleep 6
-launch Applications/Terminal.app
+sleep 5
+launch Applications/Terminal.wap
 
 wait $KERNEL_PID

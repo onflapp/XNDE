@@ -23,13 +23,13 @@ function start_process() {
     window.close();
   };
 
-  client.onmessage = function(evt) {
+  client.onmessage = function(evt) { // <= receive from the launcher
     let data = evt.data;
     let msg = parse_message(data);
     router.route(msg, 
       function(rv) {
         if (rv) {
-          let s = make_message(msg);
+          let s = encode_message(rv); // => send to the launcher
           client.send(s);
         }
       }

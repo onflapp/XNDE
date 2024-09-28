@@ -7,10 +7,14 @@ const router = require('shared/router');
 CONNECTIONS = {};
 CHROME_APP = null;
 
+/*
+ * send to the web browser view
+ */
+
 function ws_send(line) {
   for (let key in CONNECTIONS) {
     let connection = CONNECTIONS[key];
-    connection.send(line);
+    connection.send(line); // => browser view
   }
 }
 
@@ -24,12 +28,12 @@ function ws_server(cb) {
     function(request) {
       console.error('new display connection');
       let msg = mutil.make_message('CORE', 'register', {name:'DISPLAY'});
-      console.log(mutil.encode_message(msg));
+      console.log(mutil.encode_message(msg)); // => the launcher
 
       let connection = request.accept(null, request.origin);
       CONNECTIONS[connection] = connection;
 
-      connection.on('message', function(message) {
+      connection.on('message', function(message) { // <= browser view
         let str = message.utf8Data;
         console.log(str);
       });
@@ -49,6 +53,10 @@ function ws_server(cb) {
   );
 }
 
+/*
+ * receive messages from the launcher
+ */
+
 function io_client() {
   const cio = require('shared/client_io.js');
 
@@ -57,7 +65,7 @@ function io_client() {
 
   cio.receive_message(process,
     function(msg, cb) {
-      ws_send(mutil.encode_message(msg));
+      ws_send(mutil.encode_message(msg)); // => browser view
     }
   );
 }
