@@ -7,8 +7,11 @@ exports.commands = {
     let path = options;
     if (options.url) path = msg.options.url;
 
-    launcher.launch_app(path);
-    cb(mutils.make_ack());
+    launcher.launch_app(path,
+      function() { // => ack registration has happened
+        cb(mutils.make_ack());
+      }
+    );
   },
 
   ping:function(options, cb) {

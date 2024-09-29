@@ -1,4 +1,4 @@
-function exec_web_proc(path, main) {
+function exec_web_proc(path, main, cb_ack) {
   const reg = require('shared/registry');
   const base = reg.get_property('BASE_DIR');
   const port = reg.get_property('HTTP_PORT');
@@ -13,9 +13,10 @@ function exec_web_proc(path, main) {
   };
 
   global.route_message(msg, null);
+  cb_ack();
 }
 
-function exec_node_proc(path, main) {
+function exec_node_proc(path, main, cb_ack) {
   const mutil = require('shared/messages');
   const cio = require('shared/client_io');
   const registry = require('shared/registry');
@@ -34,8 +35,12 @@ function exec_node_proc(path, main) {
     registry.set_object(path, app);
 
     cio.receive_message(app, 
-      function(msg, cb) {
+      function(msg, cb) { // => from app to the launcher
         if (msg) {
+          if (msg.command == 'register') {
+            cb_ack(); // => ack the registration
+          }
+
           console.error(msg);
           global.message_router.route(msg, cb);
         }
@@ -76,7 +81,7 @@ function app_package_info(path) {
   }
 }
 
-function launch_app(path) {
+function launch_app(path, cb_ack) {
   const reg = require('shared/registry');
 
   let pack = app_package_info(path);
@@ -87,10 +92,10 @@ function launch_app(path) {
     else if (pack['main']) {
       let main = pack['main'];
       if (main.match('\.js$')) {
-        exec_node_proc(path, main);
+        exec_node_proc(path, main, cb_ack);
       }
       else if (main.match('\.html$')) {
-        exec_web_proc(path, main);
+        exec_web_proc(path, main, cb_ack);
       }
     }
     else {

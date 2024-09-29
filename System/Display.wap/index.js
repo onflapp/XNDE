@@ -35,6 +35,11 @@ function start_process() {
       }
     );
   };
+
+  window.addEventListener('message', function(evt) { // <= receive from web app
+    let data = evt.data;
+    let msg = parse_message(data);
+  });
 }
 
 window.addEventListener("DOMContentLoaded", function() {

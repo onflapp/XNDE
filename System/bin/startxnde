@@ -32,10 +32,8 @@ start_dispatcher
 start_launcher
 
 launch System/Display.wap
-sleep 2
 dispatch DISPLAY init_wm-sync "simple"
 
-sleep 5
 launch Applications/Terminal.wap
 
 wait $KERNEL_PID

@@ -35,11 +35,11 @@ function init_workspace() {
   desk.classList.add('ddesktop');
   
   WORKSPACE = new DWorkspace(desk);
-}
+  
+  window.COMMANDS['create_window'] = wm_create_window;
 
-COMMANDS = {
-  'create_window':wm_create_window
-};
+  window.postMessage('hello');
+}
 
 include_script("display_wm/simple/node_modules/jquery/dist/jquery.min.js");
 include_script("display_wm/simple/node_modules/jquery-ui/dist/jquery-ui.min.js");

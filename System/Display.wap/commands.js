@@ -30,10 +30,10 @@ function init_wm(name, cb) {
   wm.src = `display_wm/${name}/index.js`;
   document.head.appendChild(wm);
   
-  setTimeout(
-    function() {
+  window.addEventListener('message',
+    function(evt) {
       cb(make_ack());
-    },1000
+    }
   );
 }
 
