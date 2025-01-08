@@ -7,7 +7,7 @@
   "author": "OnFlApp",
   "license": "MIT",
   "dependencies": {
-    "shared": "file:../Shared",
+    "shared": "file:../../Shared",
     "express": "^4.17.1"
   }
 }

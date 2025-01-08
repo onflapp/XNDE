@@ -1,0 +1,16 @@
+#!/bin/sh
+
+install_package() {
+  if [ -d node_modules ];then
+    echo "installed `pwd`"
+  else
+    echo "installing `pwd`"
+    npm install || exit 1
+  fi
+}
+
+if [ -d "$1" ];then
+  cd "$1"
+fi
+
+install_package

@@ -1,0 +1,16 @@
+{
+  "name": "Display.service",
+  "productName": "Display Service",
+  "version": "1.0.0",
+  "description": "Display Service",
+  "main": "main.js",
+  "author": "onflapp",
+  "license": "MIT",
+  "dependencies": {
+    "x11": "^2.3.0",
+    "xinput": "^0.5.0",
+    "express": "^4.17.1",
+    "shared": "file:../../Shared",
+    "websocket": "^1.0.34"
+  }
+}

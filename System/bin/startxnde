@@ -1,22 +1,32 @@
-#!/bin/bash
+#!/bin/sh
 
-function cleanup() {
+cleanup() {
   kill $KERNEL_PID
   kill $LAUNCHER_PID
 }
 
-trap cleanup SIGINT SIGTERM
+trap cleanup INT TERM
 
-function start_dispatcher() {
-  node ./System/Dispatcher/main.js &
+start_dispatcher() {
+  A="./System/Services/Dispatcher"
+  update_wap $A || exit 1
+  node $A/main.js &
   KERNEL_PID="$!"
-  sleep 2
+  sleep 1
 }
 
-function start_launcher() {
-  node ./System/Launcher.wap/main.js &
+start_launcher() {
+  A="./System/Services/Launcher"
+  update_wap $A || exit 1
+  node $A/main.js &
   LAUNCHER_PID="$!"
-  sleep 2
+}
+
+start_display() {
+  A="./System/Services/Display"
+  update_wap $A || exit 1
+  node $A/main.js &
+  DISPLAY_PID="$!"
 }
 
 B=`realpath "$0"`
@@ -30,10 +40,9 @@ export PATH="$PWD/System/bin:$PATH"
 
 start_dispatcher
 start_launcher
+start_display
 
-launch System/Display.wap
-dispatch DISPLAY init_wm-sync "simple"
-
-launch Applications/Terminal.wap
+#launch Applications/Terminal.wap
 
 wait $KERNEL_PID
+cleanup
