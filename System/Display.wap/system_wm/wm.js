@@ -9,6 +9,11 @@ var FRAME_BORDER = 10;
 var frames = {};
 var dragStart = null;
 
+async function Initialize() {
+	X.atoms.WM_PROTOCOLS = await GetAtom("WM_PROTOCOLS");
+	X.atoms.WM_DELETE_WINDOW = await GetAtom("WM_DELETE_WINDOW");
+}
+
 function MoveAll(xoff) {
 	for (var fid in frames) {
 		var f = frames[fid];
@@ -16,6 +21,19 @@ function MoveAll(xoff) {
 			X.MoveWindow(fid, winX, f.y);
 			f.x = winX;
 	}
+}
+
+function CloseWindow(fid) {
+	var f = frames[fid];
+
+  var eventData = new Buffer(32);
+  eventData.writeInt8(33, 0);                       //Event Type 33 = ClientMessage
+  eventData.writeInt8(32,  1);                      //Format
+  eventData.writeInt32LE(f.wid, 4);                 //Window ID
+  eventData.writeInt32LE(X.atoms.WM_PROTOCOLS, 8);  //Message Type
+  eventData.writeInt32LE(X.atoms.WM_DELETE_WINDOW, 12); 
+	
+  X.SendEvent(f.wid, false, 0, eventData);
 }
 
 function RestoreFrames() {
@@ -26,12 +44,60 @@ function RestoreFrames() {
 	var frames = {};
 }
 
+async function GetWindowProtocols(wid) {
+	return new Promise(function (resolve) {
+		X.GetProperty(0, wid, X.atoms.WM_PROTOCOLS, 0, 0, 10000000, function(err, prop) {
+			var numAtoms = prop.data.length/4;
+			var res = [];
+			for (var i=0; i < prop.data.length; i+=4) {
+				var a = prop.data.unpack('L', i)[0];
+				X.GetAtomName(a, function(err, str) {
+					res.push(str);
+					if (res.length === numAtoms) resolve(res);
+				});
+			}
+		});
+	});
+}
+
+function GetAtom(name) {
+	return new Promise(function (resolve) {
+		X.InternAtom(false, name, function(err, atom) {
+      resolve(atom);
+    });
+	});
+}
+
+function GetWindowAttributes(wid) {
+	return new Promise(function (resolve) {
+  	X.GetWindowAttributes(wid, function(err, attrs) {
+		  if (attrs[8]) { // override-redirect flag
+			  console.log("don't manage");
+				X.MapWindow(wid);
+        resolve(null);
+	  	}
+      else {
+        resolve(attrs);
+      }
+    });
+  });
+}
+
+function GetWindowGeometry(wid) {
+  return new Promise(function(resolve) {
+    X.GetGeometry(wid, function(err, clientGeom) {
+      resolve(clientGeom);
+    });
+  });
+}
+
 function HandleRootEvents(ev) {
 	try {
-		console.log(ev);
+		//console.log(ev);
 		if (ev.type === 20) {       // MapRequest
-			if (!frames[ev.wid])
+			if (!frames[ev.wid]) {
 				ManageWindow(ev.wid);
+			}
 			return;
 		} 
 		else if (ev.type === 23) { // ConfigureRequest
@@ -42,7 +108,7 @@ function HandleRootEvents(ev) {
 		else if (ev.type === 2) { // KeyDown
 		}
 		else if (ev.type === 4) { // Button
-			console.log(ev);
+			//console.log(ev);
 			if (ev.keycode == 6)      MoveAll(1);
 			else if (ev.keycode == 7) MoveAll(-1);
 		}
@@ -64,9 +130,9 @@ function HandleRootEvents(ev) {
 
 function HandleFrameEvents(ev) {
 	try {
-		console.log(ev);
+		//console.log(ev);
 		var f = frames[ev.wid];
-		if (ev.type == 4) {
+		if (ev.type == 4) { // MouseDown
 			X.RaiseWindow(ev.wid);
 			X.SetInputFocus(f.wid, 1);
 			dragStart = { 
@@ -77,12 +143,15 @@ function HandleFrameEvents(ev) {
 			};
 
 			if (ev.y > FRAME_TITLE && ev.x > FRAME_BORDER) dragStart.resize = true;
+			else if (ev.y < FRAME_TITLE && ev.x < FRAME_TITLE) {
+        CloseWindow(f.fid);
+      }
 			else dragStart.move = true;
 		} 
 		else if (ev.type == 5) {
 			dragStart = null;
 		} 
-		else if (ev.type == 6) {
+		else if (ev.type == 6) { // Mouse Up
 			if (dragStart && dragStart.move) {
 							winX = dragStart.winX + ev.rootx - dragStart.rootx;
 							winY = dragStart.winY + ev.rooty - dragStart.rooty;
@@ -103,7 +172,6 @@ function HandleFrameEvents(ev) {
 				winW = winW - (FRAME_BORDER * 2);
 				winH = winH - FRAME_TITLE - FRAME_BORDER;
 				X.ResizeWindow(f.wid, winW, winH);
-
 			}
 		} 
 		else if (ev.type == 12) { //expose
@@ -114,62 +182,59 @@ function HandleFrameEvents(ev) {
 	}
 }
 
-function ManageWindow(wid) {
+async function ManageWindow(wid) {
 	console.log("MANAGE WINDOW: " + wid);
-	X.GetWindowAttributes(wid, function(err, attrs) {
-		if (attrs[8]) { // override-redirect flag
-			console.log("don't manage");
-			X.MapWindow(wid);
-			return;
-		}
+	var attrs = await GetWindowAttributes(wid);
 
-		var fid = X.AllocID();
-		var winX, winY;
-		winX = parseInt(Math.random()*300);
-		winY = parseInt(Math.random()*300);
+  var pos = {};
+	var fid = X.AllocID();
+	var winX, winY;
+	winX = parseInt(Math.random()*300);
+	winY = parseInt(Math.random()*300);
 
-		frames[fid] = {
-			wid:wid,
-			fid:fid,
-			x:winX,
-			y:winY
-		};
+	frames[fid] = {
+		wid:wid,
+		fid:fid,
+		x:winX,
+		y:winY
+	};
 
-		X.GetGeometry(wid, function(err, clientGeom) {
-			console.log("window geometry: ", clientGeom);
+	var clientGeom = await GetWindowGeometry(wid);
+  console.log("window geometry: ", clientGeom);
 
-			var width = clientGeom.width + (FRAME_BORDER * 2);
-			var height = clientGeom.height + FRAME_TITLE + FRAME_BORDER;
-			var events = x11.eventMask.Button1Motion
-				    |x11.eventMask.ButtonPress
-				    |x11.eventMask.ButtonRelease
-				    |x11.eventMask.SubstructureNotify
-				    |x11.eventMask.SubstructureRedirect
-				    |x11.eventMask.Exposure;
+  var protos = await GetWindowProtocols(wid);
+	console.log(protos);
 
-			console.log("CreateWindow", fid, root, winX, winY, width, height);
-			X.CreateWindow(fid, root, winX, winY, width, height, 
-				0, 0, 0, 0,
-				{ backgroundPixel: white, eventMask: events });
+	var width = clientGeom.width + (FRAME_BORDER * 2);
+	var height = clientGeom.height + FRAME_TITLE + FRAME_BORDER;
+	var events = x11.eventMask.Button1Motion
+			    |x11.eventMask.ButtonPress
+			    |x11.eventMask.ButtonRelease
+			    |x11.eventMask.SubstructureNotify
+			    |x11.eventMask.SubstructureRedirect
+			    |x11.eventMask.Exposure;
 
-			frames[fid].width = width;
-			frames[fid].height = height;
+	console.log("CreateWindow", fid, root, winX, winY, width, height);
+	X.CreateWindow(fid, root, winX, winY, width, height, 
+			0, 0, 0, 0,
+			{ backgroundPixel: white, eventMask: events });
 
-			var ee = new EventEmitter();
-			X.event_consumers[fid] = ee;
-			ee.on('event', HandleFrameEvents);
+	frames[fid].width = width;
+	frames[fid].height = height;
+	frames[fid].protocols = protos;
 
-			X.ChangeSaveSet(1, wid);
-			X.ReparentWindow(wid, fid, FRAME_BORDER, FRAME_TITLE);
-			console.log("MapWindow", fid);
-			X.MapWindow(fid);
-			X.MapWindow(wid);
+	var ee = new EventEmitter();
+	X.event_consumers[fid] = ee;
+	ee.on('event', HandleFrameEvents);
 
-			X.GrabKey(wid, 0, 64, 46, 1, 1);
-			//X.GrabButton(wid, 0, 0, 1, 1, 0, 0, 0);
-		});
+	X.ChangeSaveSet(1, wid);
+	X.ReparentWindow(wid, fid, FRAME_BORDER, FRAME_TITLE);
+	console.log("MapWindow", fid);
+	X.MapWindow(fid);
+	X.MapWindow(wid);
 
-	});
+	X.GrabKey(wid, 0, 64, 46, 1, 1);
+	//X.GrabButton(wid, 0, 0, 1, 1, 0, 0, 0);
 }
 
 var client = x11.createClient(function(err, display) {
@@ -182,8 +247,8 @@ var client = x11.createClient(function(err, display) {
 		console.log('root = ' + root);
 
 		var events = x11.eventMask.Exposure
-			    |x11.eventMask.ButtonPress
-			    |x11.eventMask.SubstructureRedirect;
+					|x11.eventMask.ButtonPress
+					|x11.eventMask.SubstructureRedirect;
 
 		X.ChangeWindowAttributes(root, {eventMask:events}, function(err) {
 			if (err.error == 10) {
@@ -192,6 +257,8 @@ var client = x11.createClient(function(err, display) {
 			}
 
 		});
+
+		Initialize();
 
 		X.QueryTree(root, function(err, tree) {
 			tree.children.forEach(ManageWindow);
