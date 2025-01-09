@@ -9,8 +9,6 @@
   "dependencies": {
     "x11": "^2.3.0",
     "xinput": "^0.5.0",
-    "express": "^4.17.1",
-    "shared": "file:../../Shared",
-    "websocket": "^1.0.34"
+    "socket.io-client": "^4.8.1"
   }
 }

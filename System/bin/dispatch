@@ -1,8 +1,13 @@
 #!/bin/sh
 
 if [ -z "$2" ];then
-  echo "dispatch [target] [command] [options]"
+  echo "dispatch [name] [command]"
+  echo "dispatch [name] [command] [opt=val]"
   exit 1
 else
-  curl -o - "http://localhost:3000/dispatch?target=$1&command=$2&options=$3"
+  if [ -n "$3" ];then
+    curl -o - "http://localhost:3000/dispatch?name=$1&command=$2&$3"
+  else
+    curl -o - "http://localhost:3000/dispatch?name=$1&command=$2"
+  fi
 fi

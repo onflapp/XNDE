@@ -1,5 +1,10 @@
+const proc = require('child_process');
+const fs = require('fs');
+const handler = require('./handler.js');
+
+let applications = {};
+
 function exec_web_proc(path, main, cb_ack) {
-  const reg = require('shared/registry');
   const base = reg.get_property('BASE_DIR');
   const port = reg.get_property('HTTP_PORT');
 
@@ -16,58 +21,32 @@ function exec_web_proc(path, main, cb_ack) {
   cb_ack();
 }
 
-function exec_node_proc(path, main, cb_ack) {
-  const mutil = require('shared/messages');
-  const cio = require('shared/client_io');
-  const registry = require('shared/registry');
-  const proc = require('child_process');
-
-  let app = registry.get_object(path);
-  if (app) {
-    console.error('exists already');
-    cio.send_message(app.stdin, '.', 'reactivate');
-  }
-  else {
+function exec_node_proc(path, main, cb) {
+  let app = applications[path];
+  if (!app) {
     app = proc.spawn('node', [main], {
       cwd:path
     });
 
-    registry.set_object(path, app);
+    app.stderr.on('data', function(data) {
+      console.error(data);
+    });
 
-    cio.receive_message(app, 
-      function(msg, cb) { // => from app to the launcher
-        if (msg) {
-          if (msg.command == 'register') {
-            cb_ack(); // => ack the registration
-          }
+    handler.receive_message(app, cb);
 
-          console.error(msg);
-          global.message_router.route(msg, cb);
-        }
-        else {
-          cb(null);
-        }
-      }
-    );
+    app.on('close', function(code) {
+      delete applications[path];
+      console.error(`node process exited with code ${code}`);
+    });
 
-    app.stderr.on('data',
-      function(data) {
-        let s = (''+data).replace(/\n$/, '');
-        console.error(`[${s}]`);
-      }
-    );
-
-    app.on('close',
-      function(code) {
-        registry.remove_all_objects(app);
-        console.error(`node process exited with code ${code}`);
-      }
-    );
+    applications[path] = app;
+  }
+  else {
+    console.error(`running already ${path}`);
   }
 }
 
 function app_package_info(path) {
-  const fs = require('fs');
 
   try {
     let data = fs.readFileSync(path+'/package.json', 'utf8');
@@ -81,9 +60,7 @@ function app_package_info(path) {
   }
 }
 
-function launch_app(path, cb_ack) {
-  const reg = require('shared/registry');
-
+function launch_app(path, cb) {
   let pack = app_package_info(path);
   if (pack) {
     if (pack['scripts'] && pack['scripts']['start']) {
@@ -92,10 +69,10 @@ function launch_app(path, cb_ack) {
     else if (pack['main']) {
       let main = pack['main'];
       if (main.match('\.js$')) {
-        exec_node_proc(path, main, cb_ack);
+        exec_node_proc(path, main, cb);
       }
       else if (main.match('\.html$')) {
-        exec_web_proc(path, main, cb_ack);
+        exec_web_proc(path, main, cb);
       }
     }
     else {

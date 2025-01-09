@@ -1,13 +1,12 @@
 {
-  "name": "App Server",
-  "productName": "App Server",
+  "name": "Launcher",
+  "productName": "Launcher",
   "version": "1.0.01",
-  "description": "App Server",
+  "description": "Launcher",
   "main": "main.js",
   "author": "OnFlApp",
   "license": "MIT",
   "dependencies": {
-    "shared": "file:../../Shared",
-    "express": "^4.17.1"
+    "socket.io-client": "^4.8.1"
   }
 }

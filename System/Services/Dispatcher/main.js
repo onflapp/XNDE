@@ -1,96 +1,78 @@
-const mutil = require('shared/messages');
-const registry = require('shared/registry');
-const router = require('shared/router');
-const commands = require('./commands.js').commands;
+const options = {
+  serveClient:true
+};
 
-function route_message(msg, cb) {
-  global.message_router.route(msg, cb);
-}
+const app = require("express")();
+const http = require("http").createServer(app);
+const io = require("socket.io")(http, options);
 
-function ws_server() {
-  const handler = require('./server_ws.js');
-  const WebSocketServer = require('websocket').server;
-  const http = require('http');
-  const port = (process.env.KERNEL_WSPORT || 4000);
+const registry = require("./registry.js");
 
-  let server = http.createServer();
+io.on("connection", function(socket) {
+  console.log("connected");
 
-  let wsServer = new WebSocketServer({
-    httpServer:server
+  // handle dispatch
+  socket.on("dispatch", function(req, cb) {
+    console.log(req);
+    if (req && req.name) {
+      let s = registry.get_object(req.name);
+      if (s && socket != s) {
+        s.emit("dispatch", req, cb);
+      }
+      else {
+        if (cb) cb("ERROR: unknown socket");
+      }
+    }
+    else {
+      if (cb) cb("ERROR: unknown name");
+    }
   });
 
-  wsServer.on('request', handler.receive_message(
-    function(msg, cb) {
-      if (msg) {
-        route_message(msg, cb);
-      }
-      else {
-        cb(null);
-      }
+  // handle register
+  socket.on("register", function(req, cb) {
+    if (req && req.name) {
+      console.log("registered: " + req.name);
+      registry.set_object(req.name, socket);
+      if (cb) cb("OK");
     }
-  ));
-
-  server.listen(port,
-    function() {
-      console.error(`ws://localhost:${port}`);
+    else {
+      console.log("register error: unknown name");
+      if (cb) cb("ERROR: unknown name");
     }
-  );
-}
+  });
 
-function web_server() {
-  const reg = require('shared/registry');
-  const express = require('express');
-  //const fshandler = require('./filesystem.js');
-  const handler = require('./server_web.js');
+  // handle disconnect
+  socket.on("disconnect", function() {
+    console.log("disconnect");
+    registry.remove_all_objects(socket);
+  });
 
-  const app = express();
-  const port = (process.env.KERNEL_PORT || 3000);
+});
 
-  reg.set_property('BASE_PORT', port);
-  reg.set_property('BASE_URL', `http://localhost:${port}`);
-  reg.set_property('BASE_DIR', process.cwd());
 
-  //app.get('/files/*', fshandler.handle_file_request);
-  app.get('/dispatch*', handler.receive_message(
-    function(msg, cb) {
-      if (msg) {
-        route_message(msg, cb);
-      }
-      else {
-        cb(null);
-      }
+// handle http
+app.get('/dispatch*', function(req, res) {
+  if (req.query.name) {
+    let s = registry.get_object(req.query.name);
+    if (s) {
+      s.emit("dispatch", req.query, function(rv) {
+        res.writeHead(200);
+        res.end(rv);
+      });
     }
-  ));
-
-  app.listen(port, 
-    function() {
-      console.error(`http://localhost:${port}/dispatch`);
+    else {
+      res.writeHead(200);
+      res.end('unknown name');
     }
-  );
-}
+  }
+  else {
+    res.writeHead(200);
+    res.end('DONE');
+  }
+});
 
-function io_client() {
-  const cio = require('shared/client_io');
+http.listen(3000);
 
-  process.stdin.resume();
-  process.stdin.setEncoding('utf8');
-
-  cio.receive_message(process,
-    function(msg, cb) {
-      if (msg) {
-        route_message(msg, cb);
-      }
-      else {
-        cb(null);
-      }
-    }
-  );
-}
-
-/* main */
-
-global.message_router = new router.MessageRouter('CORE', commands);
-
-web_server();
-ws_server();
-io_client();
+console.log("http://localhost:3000");
+console.log("http://localhost:3000/dispatch");
+console.log("http://localhost:3000/socket.io/socket.io.js");

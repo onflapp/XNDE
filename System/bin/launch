@@ -4,5 +4,5 @@ if [ -z "$1" ];then
   echo "launch [application path]"
   exit 1
 else
-  curl -o - "http://localhost:3000/dispatch?target=LAUNCHER&command=launch-sync&options=$1"
+  curl -o - "http://localhost:3000/dispatch?name=LAUNCHER&command=launch&path=$1"
 fi
