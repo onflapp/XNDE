@@ -3,7 +3,7 @@
   "productName": "WebBrowser",
   "version": "1.0.0",
   "description": "WebBrowser App",
-  "main": "index.html",
+  "main": "main.sh",
   "author": "onflapp",
   "license": "MIT"
 }

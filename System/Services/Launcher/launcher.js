@@ -4,21 +4,12 @@ const handler = require('./handler.js');
 
 let applications = {};
 
-function exec_web_proc(path, main, cb_ack) {
-  const base = reg.get_property('BASE_DIR');
-  const port = reg.get_property('HTTP_PORT');
-
-  let u = 'http://localhost:'+port+'/'+path+'/'+ main;
-  let msg = {
-    target:'DISPLAY',
-    command:'create_window',
-    options:{
-      url:u
-    }
-  };
-
-  global.route_message(msg, null);
-  cb_ack();
+function exec_web_proc(path, main, cb) {
+  cb({
+    name:"DISPLAY",
+    command:"show",
+    url:"http://localhost:"+global.WPORT+"/"+path+"/"+main
+  });
 }
 
 function exec_node_proc(path, main, cb) {
@@ -29,7 +20,7 @@ function exec_node_proc(path, main, cb) {
     });
 
     app.stderr.on('data', function(data) {
-      console.error(data);
+      console.error(data.toString());
     });
 
     handler.receive_message(app, cb);
@@ -42,7 +33,33 @@ function exec_node_proc(path, main, cb) {
     applications[path] = app;
   }
   else {
-    console.error(`running already ${path}`);
+    app.stdin.write("/dispatch?command=reopen");
+  }
+}
+
+function exec_shell_proc(path, main, cb) {
+  let app = applications[path];
+  let dir = process.cwd()+'/'+path;
+  if (!app) {
+    app = proc.spawn(dir+'/'+main, [], {
+      cwd:dir
+    });
+
+    app.stderr.on('data', function(data) {
+      console.error(data.toString());
+    });
+
+    handler.receive_message(app, cb);
+
+    app.on('close', function(code) {
+      delete applications[path];
+      console.error(`node process exited with code ${code}`);
+    });
+
+    applications[path] = app;
+  }
+  else {
+    app.stdin.write("/dispatch?command=reopen");
   }
 }
 
@@ -70,6 +87,9 @@ function launch_app(path, cb) {
       let main = pack['main'];
       if (main.match('\.js$')) {
         exec_node_proc(path, main, cb);
+      }
+      else if (main.match('\.sh$')) {
+        exec_shell_proc(path, main, cb);
       }
       else if (main.match('\.html$')) {
         exec_web_proc(path, main, cb);

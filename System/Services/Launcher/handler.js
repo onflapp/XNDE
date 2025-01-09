@@ -17,25 +17,26 @@ function receive_message(proc, func) {
 
   sin.setEncoding('utf8');
 
-  sin.on('data', 
-    function(chunk) {
-      let str = chunk;
-      if (typeof str != 'string') str = chunk.toString();
+  sin.on('data', function(chunk) {
+    let str = chunk;
+    if (typeof str != 'string') str = chunk.toString();
 
-      let i = str.indexOf('\n');
-      if (i != -1) {
-        line += str.substr(0, i);
-        let msg = parse_message(line);
-        if (msg) {
-          func(msg);
-        }
-        line = '';
+    let i = str.indexOf('\n');
+    if (i != -1) {
+      line += str.substr(0, i);
+      let msg = parse_message(line);
+      if (msg) {
+        func(msg);
       }
       else {
-        line += str;
+        console.error(line);
       }
+      line = '';
     }
-  );
+    else {
+      line += str;
+    }
+  });
 
   sin.resume();
 }

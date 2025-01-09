@@ -1,5 +1,8 @@
 const path = require('path');
 
+let SPORT = 0;
+let WPORT = 0;
+
 function ws_handle_connection(connection) {
   const Pty = require("node-pty");
   let ptty = Pty.spawn("bash", [], {
@@ -47,9 +50,6 @@ function ws_handle_connection(connection) {
   );
 }
 
-function ws_server_ready(cb) {
-}
-
 function ws_server(cb) {
   const WebSocketServer = require('websocket').server;
   const http = require('http');
@@ -81,16 +81,29 @@ function web_server() {
 
   app.use('/', express.static("."));
 
-  let server = app.listen(0,
-    function () {
-      let sport = server.address().port;
-      ws_server(function(ws) {
-        let wport = ws.address().port;
-        let msg = "name=DISPLAY&command=show&url="+escape(`http://localhost:${sport}/index.html?data=${wport}`);
-        console.log("/dispatch?"+msg);
-      });
+  let server = app.listen(0, function () {
+    SPORT = server.address().port;
+    ws_server(function(ws) {
+      WPORT = ws.address().port;
+      console.log("/dispatch?name=DISPLAY&command=show&url="+escape(`http://localhost:${SPORT}/index.html?data=${WPORT}`));
+    });
+  });
+}
+
+function handle_messages() {
+  process.stdin.resume();
+  process.stdin.setEncoding('utf8');
+
+  process.stdin.on('data', function(data) {
+    let line = data.toString().replace(/\n/, '');
+    if (line.indexOf("/dispatch?") == 0) {
+      let q = require('url').parse(line, true);
+      if (q && q.query) {
+        console.log("/dispatch?name=DISPLAY&command=show&url="+escape(`http://localhost:${SPORT}/index.html?data=${WPORT}`));
+      }
     }
-  );
+  });
 }
 
 web_server();
+handle_messages();

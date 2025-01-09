@@ -1,0 +1,9 @@
+{
+  "name": "GoogleMail",
+  "productName": "GoogleMail",
+  "version": "1.0.0",
+  "description": "GoogleMail App",
+  "main": "index.html",
+  "author": "onflapp",
+  "license": "MIT"
+}
