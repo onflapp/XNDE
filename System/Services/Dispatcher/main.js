@@ -8,12 +8,36 @@ const io = require("socket.io")(http, options);
 
 const registry = require("./registry.js");
 
+function wait_for_object(name, timeout, cb) {
+  let s = registry.get_object(name);
+  if (s) {
+    cb(true);
+  }
+  else {
+    let c = timeout?(timeout*10):100;
+    let do_check = function() {
+      let s = registry.get_object(name);
+      if (s) {
+        cb(true);
+      }
+      else if (c <= 0) {
+        cb(false);
+      }
+      else {
+        c--;
+        setTimeout(do_check, 100);
+      }
+    };
+
+    setTimeout(do_check, 100);
+  }
+}
+
 io.on("connection", function(socket) {
   console.log("connected");
 
   // handle dispatch
   socket.on("dispatch", function(req, cb) {
-    console.log(req);
     if (req && req.name) {
       let s = registry.get_object(req.name);
       if (s && socket != s) {
@@ -52,7 +76,20 @@ io.on("connection", function(socket) {
 
 // handle http
 app.get('/dispatch*', function(req, res) {
-  if (req.query.name) {
+  console.log(req.query);
+  if (req.query.name && req.query.command == "waitfor") {
+    wait_for_object(req.query.name, req.query.timeout, function(rv) {
+      if (rv) {
+        res.writeHead(200);
+        res.end(`${req.query.name} found`);
+      }
+      else {
+        res.writeHead(404);
+        res.end(`${req.query.name} not found`);
+      }
+    });
+  }
+  else if (req.query.name) {
     let s = registry.get_object(req.query.name);
     if (s) {
       s.emit("dispatch", req.query, function(rv) {
