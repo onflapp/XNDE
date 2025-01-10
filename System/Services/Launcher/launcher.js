@@ -77,6 +77,25 @@ function app_package_info(path) {
   }
 }
 
+function update_wap(path, cb) {
+  let cwd = process.cwd();
+  let sh = proc.spawn(cwd+"/System/bin/update_wap", [], {
+    cwd:path
+  });
+
+  sh.stderr.on('data', function(data) {
+    console.error(data.toString());
+  });
+
+  sh.stdout.on('data', function(data) {
+    console.error(data.toString());
+  });
+
+  sh.on('close', function(code) {
+    cb();
+  });
+}
+
 function launch_app(path, cb) {
   let pack = app_package_info(path);
   if (pack) {
@@ -85,15 +104,17 @@ function launch_app(path, cb) {
     }
     else if (pack['main']) {
       let main = pack['main'];
-      if (main.match('\.js$')) {
-        exec_node_proc(path, main, cb);
-      }
-      else if (main.match('\.sh$')) {
-        exec_shell_proc(path, main, cb);
-      }
-      else if (main.match('\.html$')) {
-        exec_web_proc(path, main, cb);
-      }
+      update_wap(path, function() {
+        if (main.match('\.js$')) {
+          exec_node_proc(path, main, cb);
+        }
+        else if (main.match('\.sh$')) {
+          exec_shell_proc(path, main, cb);
+        }
+        else if (main.match('\.html$')) {
+          exec_web_proc(path, main, cb);
+        }
+      });
     }
     else {
     }

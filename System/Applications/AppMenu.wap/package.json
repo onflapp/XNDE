@@ -1,0 +1,9 @@
+{
+  "name": "AppMenu",
+  "productName": "AppMenu",
+  "version": "1.0.0",
+  "description": "AppMenu",
+  "main": "index.html",
+  "author": "onflapp",
+  "license": "MIT"
+}
