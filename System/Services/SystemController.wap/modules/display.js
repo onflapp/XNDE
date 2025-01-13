@@ -1,0 +1,68 @@
+const proc = require('child_process');
+
+function exec(cmd, args, cb) {
+  let app = proc.spawn(cmd, args, {});
+  let buff = '';
+  
+  app.stderr.on('data', function(data) {
+    console.error(data.toString());
+  });
+
+  app.stdout.setEncoding('utf8');
+  app.stdout.on('data', function(chunk) {
+    let str = chunk;
+    if (typeof str != 'string') str = chunk.toString();
+
+    buff += str;
+  });
+
+  app.stdout.resume();
+
+  app.on('close', function(code) {
+    cb(buff.split(/\n/));
+  });
+}
+
+function init_display(cb) {
+  cb("SCREEN");
+}
+
+function handle_message(msg, cb) {
+  if (msg.command == "status") {
+    exec('brightnessctl', ['-lm'], function(lines) {
+      let backlight = null;
+      let l = lines.filter(function(line) {
+        let a = line.split(/,/);
+        if (a[1] == 'backlight') {
+          let v = a[3];
+          backlight = v.substr(0, v.length-1);
+        }
+      });
+      
+      if (backlight) {
+        let rv = {};
+        rv['brightness'] = backlight;
+        cb(rv);
+      }
+      else {
+        cb();
+      }
+    });
+  }
+  else if (msg.command == "change") {
+    if (typeof msg.brightness != 'undefined') {
+      exec('brightnessctl', ['s', msg.brightness+'%'], function() {
+        cb();
+      });
+    }
+    else {
+      cb();
+    }
+  }
+  else {
+    cb();
+  }
+}
+
+exports.init = init_display;
+exports.dispatch = handle_message;

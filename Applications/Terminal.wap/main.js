@@ -13,35 +13,29 @@ function ws_handle_connection(connection) {
     env: process.env
   });
 
-  ptty.on('exit', 
-    function(code, signal) {
-      console.log('process exit');
-    }
-  );
+  ptty.on('exit', function(code, signal) {
+    console.log('process exit');
+  });
 
-  ptty.on('data', 
-    function(data) {
-      connection.send(data);
-    }
-  );
+  ptty.on('data', function(data) {
+    connection.send(data);
+  });
 
-  connection.on('message',
-    function(message) {
-      let str = message.utf8Data;
+  connection.on('message', function(message) {
+    let str = message.utf8Data;
+    if (str) {
+      let i = str.indexOf('^[[');
+      if (i != -1) {
+        let a = str.match(/\^\[\[(\d+),(\d+)/);
+        ptty.resize(Number.parseInt(a[1]), Number.parseInt(a[2]));
+        str = str.replace(a[0], '');
+      }
+
       if (str) {
-        let i = str.indexOf('^[[');
-        if (i != -1) {
-          let a = str.match(/\^\[\[(\d+),(\d+)/);
-          ptty.resize(Number.parseInt(a[1]), Number.parseInt(a[2]));
-          str = str.replace(a[0], '');
-        }
-
-        if (str) {
-          ptty.write(str);
-        }
+        ptty.write(str);
       }
     }
-  );
+  });
 
   connection.on('close',
     function(reasonCode, description) {

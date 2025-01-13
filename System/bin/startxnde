@@ -29,20 +29,42 @@ start_display() {
   DISPLAY_PID="$!"
 }
 
+init_xwin() {
+  echo "initialize x"
+
+  if [ -f "$HOME/.Xmodmap" ];then
+    xmodmap $HOME/.Xmodmap
+  fi
+}
+
 B=`realpath "$0"`
 B=`dirname $B`
 cd "$B/../../"
+
+if [ -n "$DISPLAY" ];then
+  init_xwin
+fi
 
 export KERNEL_PORT=3000
 export KERNEL_WSPORT=3001
 export DISPLAYSERVER_PORT=3002
 export PATH="$PWD/System/bin:$PATH"
 
+## start core services
 start_dispatcher
 start_launcher
 start_display
 
+## make sure display and launcher are active
+dispatch waitfor DISPLAY 1
+dispatch waitfor LAUNCHER 1
+
+## launch system applications
+launch System/Services/SystemController.wap
+
+## launch user applications
 #launch Applications/Terminal.wap
+launch System/Applications/AppMenu.wap
 
 wait $KERNEL_PID
 cleanup

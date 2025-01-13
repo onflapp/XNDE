@@ -237,42 +237,46 @@ async function ManageWindow(wid) {
 	//X.GrabButton(wid, 0, 0, 1, 1, 0, 0, 0);
 }
 
-var client = x11.createClient(function(err, display) {
-	X = display.client;
-	X.require('render', function(err, Render) {
-		X.Render = Render;
+function StartWM() {
+	var client = x11.createClient(function(err, display) {
+		X = display.client;
+		X.require('render', function(err, Render) {
+			X.Render = Render;
 
-		root = display.screen[0].root;
-		white = display.screen[0].white_pixel;
-		console.log('root = ' + root);
+			root = display.screen[0].root;
+			white = display.screen[0].white_pixel;
+			console.log('root = ' + root);
 
-		var events = x11.eventMask.Exposure
-					|x11.eventMask.ButtonPress
-					|x11.eventMask.SubstructureRedirect;
+			var events = x11.eventMask.Exposure
+						|x11.eventMask.ButtonPress
+						|x11.eventMask.SubstructureRedirect;
 
-		X.ChangeWindowAttributes(root, {eventMask:events}, function(err) {
-			if (err.error == 10) {
-				console.error('Error: another window manager already running.');
-				process.exit(1);
-			}
+			X.ChangeWindowAttributes(root, {eventMask:events}, function(err) {
+				if (err.error == 10) {
+					console.error('Error: another window manager already running.');
+					process.exit(1);
+				}
 
-		});
+			});
 
-		Initialize();
+			Initialize();
 
-		X.QueryTree(root, function(err, tree) {
-			tree.children.forEach(ManageWindow);
+			X.QueryTree(root, function(err, tree) {
+				tree.children.forEach(ManageWindow);
+			});
 		});
 	});
-});
 
-client.on('error', function(err) {
-	console.error(err);
-});
+	client.on('error', function(err) {
+		console.error(err);
+	});
 
-client.on('event', HandleRootEvents);
+	client.on('event', HandleRootEvents);
 
-process.on('SIGINT', function() {
-	RestoreFrames();
-	process.exit(0);
-});
+	process.on('SIGINT', function() {
+		RestoreFrames();
+		process.exit(0);
+	});
+}
+
+exports.start_process = StartWM;

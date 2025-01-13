@@ -4,6 +4,7 @@ const options = {
 const io = require("socket.io-client");
 const proc = require('child_process');
 const socket = io("http://localhost:3000", options);
+const wm = require('./wm/main.js');
 
 function chrome_app(url) {
   console.error(`start chrome process ${url} in ${__dirname}`);
@@ -12,6 +13,8 @@ function chrome_app(url) {
   });
   return app;
 }
+
+wm.start_process();
 
 socket.on("connect", function() {
   console.log("connected");
