@@ -1,8 +1,14 @@
 #!/bin/sh
 
+LAUNCHER_PID_FILE="/tmp/$$-laucher.pid"
+DISPLAY_PID_FILE="/tmp/$$-laucher.pid"
+
+export LAUNCHER_PID_FILE DISPLAY_PID_FILE
+
 cleanup() {
-  kill $KERNEL_PID
-  kill $LAUNCHER_PID
+  kill `cat $LAUNCHER_PID_FILE`
+  kill `cat $DISPLAY_PID_FILE`
+  kill $DISPATCHER_PID
 }
 
 trap cleanup INT TERM
@@ -11,7 +17,7 @@ start_dispatcher() {
   A="./System/Services/Dispatcher"
   update_wap $A || exit 1
   node $A/main.js &
-  KERNEL_PID="$!"
+  DISPATCHER_PID="$!"
   sleep 1
 }
 
@@ -19,14 +25,14 @@ start_launcher() {
   A="./System/Services/Launcher"
   update_wap $A || exit 1
   node $A/main.js &
-  LAUNCHER_PID="$!"
+  echo "$!" > $LAUNCHER_PID_FILE
 }
 
 start_display() {
   A="./System/Services/Display"
   update_wap $A || exit 1
   node $A/main.js &
-  DISPLAY_PID="$!"
+  echo "$!" > $DISPLAY_PID_FILE
 }
 
 init_xwin() {
@@ -35,6 +41,8 @@ init_xwin() {
   if [ -f "$HOME/.Xmodmap" ];then
     xmodmap $HOME/.Xmodmap
   fi
+
+  xsetroot -solid gray
 }
 
 B=`realpath "$0"`
@@ -45,9 +53,7 @@ if [ -n "$DISPLAY" ];then
   init_xwin
 fi
 
-export KERNEL_PORT=3000
-export KERNEL_WSPORT=3001
-export DISPLAYSERVER_PORT=3002
+export DISPATCHER_PORT=3000
 export PATH="$PWD/System/bin:$PATH"
 
 ## start core services
@@ -66,5 +72,5 @@ launch System/Services/SystemController.wap
 #launch Applications/Terminal.wap
 launch System/Applications/AppMenu.wap
 
-wait $KERNEL_PID
+wait $DISPATCHER_PID
 cleanup

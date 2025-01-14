@@ -29,7 +29,7 @@ function init_xterm() {
     func = setTimeout(function() {
       fitAddon.fit();
       client.send('^[[' + term.cols + ',' + term.rows);
-    }, 100);
+    }, 250);
   });
 }
 

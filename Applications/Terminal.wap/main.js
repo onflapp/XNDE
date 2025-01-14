@@ -3,12 +3,12 @@ const path = require('path');
 let SPORT = 0;
 let WPORT = 0;
 
-function ws_handle_connection(connection) {
+function start_process(cmd, connection, cols, rows) {
   const Pty = require("node-pty");
-  let ptty = Pty.spawn("bash", [], {
+  let ptty = Pty.spawn(cmd?cmd:'sh', [], {
     name: 'xterm-color',
-    cols: 80,
-    rows: 24,
+    cols: (cols?cols:80),
+    rows: (rows?rows:24),
     cwd: process.env.PWD,
     env: process.env
   });
@@ -21,8 +21,18 @@ function ws_handle_connection(connection) {
     connection.send(data);
   });
 
+  return ptty;
+}
+
+function ws_handle_connection(connection) {
+  let ptty = null;
+
   connection.on('message', function(message) {
     let str = message.utf8Data;
+    if (ptty == null) {
+      console.log('start process');
+      ptty = start_process('bash', connection);
+    }
     if (str) {
       let i = str.indexOf('^[[');
       if (i != -1) {
