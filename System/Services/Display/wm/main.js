@@ -47,6 +47,7 @@ function RestoreFrames() {
 
 function DrawFrame(f) {
 	X.PolyLine(0, f.fid, f.GC, [0, 0, f.width-1, 0,
+				                           f.width-1, f.height,
 				                           f.width-1, f.height-1,
 				                           0, f.height-1,
 				                           0, 0]);

@@ -3,12 +3,11 @@
 LAUNCHER_PID_FILE="/tmp/$$-laucher.pid"
 DISPLAY_PID_FILE="/tmp/$$-laucher.pid"
 
-export LAUNCHER_PID_FILE DISPLAY_PID_FILE
 
 cleanup() {
-  kill `cat $LAUNCHER_PID_FILE`
-  kill `cat $DISPLAY_PID_FILE`
-  kill $DISPATCHER_PID
+  kill `cat $LAUNCHER_PID_FILE` 2>/dev/null
+  kill `cat $DISPLAY_PID_FILE`  2>/dev/null
+  kill $DISPATCHER_PID          2>/dev/null
 }
 
 trap cleanup INT TERM
@@ -53,8 +52,11 @@ if [ -n "$DISPLAY" ];then
   init_xwin
 fi
 
-export DISPATCHER_PORT=3000
-export PATH="$PWD/System/bin:$PATH"
+DISPATCHER_PORT=3000
+PATH="$PWD/System/bin:$PATH"
+XNDE_HOME="$PWD"
+
+export LAUNCHER_PID_FILE DISPLAY_PID_FILE DISPATCHER_PORT XNDE_HOME
 
 ## start core services
 start_dispatcher
