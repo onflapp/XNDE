@@ -3,17 +3,20 @@ const path = require('path');
 let SPORT = 0;
 let WPORT = 0;
 
-function start_process(cmd, connection, cols, rows) {
+function start_process(cmd, connection, opts) {
   const Pty = require("node-pty");
-  let ptty = Pty.spawn(cmd?cmd:'sh', [], {
+
+  let shell = (opts.shell?opts.shell:process.env.SHELL);
+  let ptty = Pty.spawn(shell, [], {
     name: 'xterm-color',
-    cols: (cols?cols:80),
-    rows: (rows?rows:24),
+    cols: (opts.cols?opts.cols:80),
+    rows: (opts.rows?opts.rows:24),
     cwd: process.env.PWD,
     env: process.env
   });
 
   ptty.on('exit', function(code, signal) {
+    connection.send('\x1bP?'+code+'Sexit\x1b\\');
     console.log('process exit');
   });
 
@@ -30,18 +33,22 @@ function ws_handle_connection(connection) {
   connection.on('message', function(message) {
     let str = message.utf8Data;
     if (ptty == null) {
+      let i = str.indexOf('\n');
+      let opts = {};
+      if (i != -1) {
+        opts = JSON.parse(unescape(str.substr(0, i))); //extract initial options
+        str = str.substr(i+1);
+      }
       console.log('start process');
-      ptty = start_process('bash', connection);
+      console.log(opts);
+      ptty = start_process('bash', connection, opts);
     }
     if (str) {
-      let i = str.indexOf('^[[');
-      if (i != -1) {
-        let a = str.match(/\^\[\[(\d+),(\d+)/);
+      if (str.startsWith('\1b[') && str.endsWith('Z')) { //handle resize
+        let a = str.match(/\1b\[(\d+);(\d+)Z/);
         ptty.resize(Number.parseInt(a[1]), Number.parseInt(a[2]));
-        str = str.replace(a[0], '');
       }
-
-      if (str) {
+      else {
         ptty.write(str);
       }
     }

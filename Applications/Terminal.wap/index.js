@@ -13,11 +13,20 @@ function init_xterm() {
   term.loadAddon(fitAddon);
   fitAddon.fit();
 
-  term.parser.registerDcsHandler({prefix:'?', final:'x'}, function(param, data) {
-    if (data == 100) {
+  var opts = {
+    cols:term.cols,
+    rows:term.rows
+  };
+
+  client.addEventListener('open', function() {
+    client.send(escape(JSON.stringify(opts))+'\n');
+  });
+
+  term.parser.registerDcsHandler({prefix:'?', final:'S'}, function(param, data) {
+    console.log('param:'+param+',data:'+data);
+    if (param == 'exit') {
       window.close();
     }
-    console.log('param:'+param+',data:'+data);
   });
 
   function trigger_resize() {
@@ -28,7 +37,7 @@ function init_xterm() {
     clearTimeout(func);
     func = setTimeout(function() {
       fitAddon.fit();
-      client.send('^[[' + term.cols + ',' + term.rows);
+      client.send('\1b[' + term.cols + ';' + term.rows + 'Z');
     }, 250);
   });
 }
