@@ -6,9 +6,9 @@ let applications = {};
 
 function exec_web_proc(path, main, cb) {
   cb({
-    name:"DISPLAY",
-    command:"show",
-    url:"http://localhost:"+global.WPORT+"/"+path+"/"+main
+    name:'DISPLAY',
+    command:'show',
+    url:`http://localhost:${global.WPORT}/${path}/${main}`
   });
 }
 

@@ -3,7 +3,6 @@
 LAUNCHER_PID_FILE="/tmp/$$-laucher.pid"
 DISPLAY_PID_FILE="/tmp/$$-laucher.pid"
 
-
 cleanup() {
   kill `cat $LAUNCHER_PID_FILE` 2>/dev/null
   kill `cat $DISPLAY_PID_FILE`  2>/dev/null
@@ -44,11 +43,13 @@ init_xwin() {
   xsetroot -solid gray
 }
 
+OS=`uname`
 B=`realpath "$0"`
 B=`dirname $B`
+
 cd "$B/../../"
 
-if [ -n "$DISPLAY" ];then
+if [ -n "$DISPLAY" ] && [ "$OS" != "Darwin"] ;then
   init_xwin
 fi
 

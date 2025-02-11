@@ -1,0 +1,9 @@
+{
+  "name": "YouTube",
+  "productName": "YouTube",
+  "version": "1.0.0",
+  "description": "YouTube App",
+  "main": "index.html",
+  "author": "onflapp",
+  "license": "MIT"
+}

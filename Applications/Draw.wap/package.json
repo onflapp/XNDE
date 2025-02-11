@@ -1,4 +1,11 @@
 {
+  "name": "Draw",
+  "productName": "Draw",
+  "version": "1.0.0",
+  "description": "Draw App",
+  "main": "index.html",
+  "author": "onflapp",
+  "license": "MIT",
   "dependencies": {
     "@zklogic/draw.io": "^15.7.2-rc1"
   }

@@ -21,6 +21,7 @@ function socket_client() {
   };
 
   const io = require("socket.io-client");
+  const path = require("path");
   const launcher = require("./launcher.js");
   const socket = io("http://localhost:3000", options);
 
@@ -34,7 +35,10 @@ function socket_client() {
     socket.on("dispatch", function(req, cb) {
       console.log(req);
       if (req.command === "launch" && req.path) {
-        launcher.launch_app(req.path, function(msg) {
+        let p = path.resolve(req.path);
+        p = p.substr(global.LAUNCHER_HOME.length+1);
+
+        launcher.launch_app(p, function(msg) {
           console.log(msg);
           socket.emit("dispatch", msg);
         });
@@ -50,6 +54,8 @@ function socket_client() {
     console.log("disconnected");
   });
 }
+
+global.LAUNCHER_HOME = process.cwd();
 
 web_server();
 socket_client();
