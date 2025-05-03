@@ -76,8 +76,13 @@ io.on("connection", function(socket) {
 
 // handle http
 app.get('/dispatch*', function(req, res) {
+  res.set('Access-Control-Allow-Origin', '*');
   console.log(req.query);
-  if (req.query.name && req.query.command == "waitfor") {
+  if (req.query.name == 'registry' && req.query.command == "list") {
+    res.writeHead(200);
+    res.end(registry.get_all_object_names().join('\n'));
+  }
+  else if (req.query.name && req.query.command == "waitfor") {
     wait_for_object(req.query.name, req.query.timeout, function(rv) {
       if (rv) {
         res.writeHead(200);

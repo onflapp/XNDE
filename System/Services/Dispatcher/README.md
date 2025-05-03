@@ -1,4 +1,4 @@
-target:command+mod:payload
-
-CORE:register:{'name'='myname'}
-CORE:unregister:{'name'='myname'}
+dispatch
+- registry names
+- [name] waitfor [timeout]
+- [name] => forward to the socket

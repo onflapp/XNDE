@@ -49,9 +49,19 @@ function get_all_objects() {
   return rv;
 }
 
+function get_all_object_names() {
+  let reg = get_shared_instance();
+  let rv = [];
+  for (let n in reg.objects) {
+    rv.push(n);
+  }
+  return rv;
+}
+
 exports.set_property = set_property;
 exports.get_property = get_property;
 exports.set_object = set_object;
 exports.get_object = get_object;
 exports.remove_all_objects = remove_all_objects;
 exports.get_all_objects = get_all_objects;
+exports.get_all_object_names = get_all_object_names;

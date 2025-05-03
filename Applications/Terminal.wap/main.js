@@ -75,11 +75,9 @@ function ws_server(cb) {
     ws_handle_connection(connection);
   });
 
-  server.listen(0, 
-    function() {
-      cb(server);
-    }
-  );
+  server.listen(0, function() {
+    cb(server);
+  });
 }
 
 function web_server() {
@@ -87,7 +85,7 @@ function web_server() {
   const app = express();
 
   app.get('/', (req, res) => {
-    res.send('Hello World!');
+    res.send('you should not be here');
   });
 
   app.use('/', express.static("."));

@@ -4,7 +4,11 @@ if [ -z "$2" ];then
   echo "dispatch [name] [command]"
   echo "dispatch [name] [command] [opt=val]"
   echo "dispatch waitfor [name] [timeout]"
+  echo ""
+  echo "dispatch registry list"
   exit 1
+elif [ "x$1" = "xregistry" ];then
+    curl -o - "http://localhost:3000/dispatch?name=registry&command=$2"
 else
   if [ "x$1" = "xwaitfor" ];then
     curl -o - "http://localhost:3000/dispatch?name=$2&command=waitfor&timeout=$3"

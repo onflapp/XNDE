@@ -6,10 +6,10 @@ function init_xterm() {
   term.open(document.getElementById('terminal'));
 
   var wport = location.search.match(/data=(\d+)/)[1];
-  var client = new WebSocket(`ws://${location.hostname}:${wport}/`);
-  var attachAddon = new AttachAddon.AttachAddon(client);
+  var client = null;
+  var attachAddon = null;
+  var connections = 0;
   var fitAddon = new FitAddon.FitAddon();
-  term.loadAddon(attachAddon);
   term.loadAddon(fitAddon);
   fitAddon.fit();
 
@@ -18,9 +18,28 @@ function init_xterm() {
     rows:term.rows
   };
 
-  client.addEventListener('open', function() {
-    client.send(escape(JSON.stringify(opts))+'\n');
-  });
+  var connect = function() {
+    if (attachAddon) {
+      attachAddon.dispose();
+    }
+    client = new WebSocket(`ws://${location.hostname}:${wport}/`);
+    attachAddon = new AttachAddon.AttachAddon(client);
+    term.loadAddon(attachAddon);
+
+    client.addEventListener('open', function() {
+      if (connections == 0) {
+        client.send(escape(JSON.stringify(opts))+'\n');
+      }
+      connections++;
+    });
+
+    client.addEventListener('close', function() {
+      console.log('close');
+      setTimeout(connect, 500);
+    });
+  };
+
+  connect();
 
   term.parser.registerDcsHandler({prefix:'?', final:'S'}, function(param, data) {
     console.log('param:'+param+',data:'+data);

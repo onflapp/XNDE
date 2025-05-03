@@ -124,4 +124,13 @@ function launch_app(path, cb) {
   }
 }
 
+function get_application_paths() {
+  let rv = [];
+  for (let k in applications) {
+    rv.push(k);
+  }
+  return rv;
+}
+
 exports.launch_app = launch_app;
+exports.get_application_paths = get_application_paths;

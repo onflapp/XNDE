@@ -3,7 +3,7 @@ function web_server() {
   const app = express();
 
   app.get('/', (req, res) => {
-    res.send('Hello World!');
+    res.send('the launcher');
   });
 
   app.use('/', express.static("."));
@@ -43,6 +43,10 @@ function socket_client() {
           socket.emit("dispatch", msg);
         });
         if (cb) cb("done");
+      }
+      else if (req.command === "list") {
+        let p = launcher.get_application_paths();
+        cb(p.join('\n'));
       }
       else {
         if (cb) cb("ERROR: command not found");

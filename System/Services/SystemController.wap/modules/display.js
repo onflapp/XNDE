@@ -18,6 +18,11 @@ function exec(cmd, args, cb) {
 
   app.stdout.resume();
 
+  app.on('error', function(err) {
+    console.log(err);
+    cb([]);
+  });
+
   app.on('close', function(code) {
     cb(buff.split(/\n/));
   });
@@ -49,8 +54,19 @@ function handle_message(msg, cb) {
       }
     });
   }
-  else if (msg.command == "change") {
-    if (typeof msg.brightness != 'undefined') {
+  else if (msg.command == 'change') {
+    /* brightness */
+    if (msg.brightness == 'up') {
+      exec('brightnessctl', ['s', '+10%'], function() {
+        cb();
+      });
+    }
+    else if (msg.brightness == 'down') {
+      exec('brightnessctl', ['s', '10%-'], function() {
+        cb();
+      });
+    }
+    else if (typeof msg.brightness != 'undefined') {
       exec('brightnessctl', ['s', msg.brightness+'%'], function() {
         cb();
       });
