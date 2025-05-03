@@ -1,0 +1,12 @@
+{
+  "name": "Audio",
+  "productName": "Audio",
+  "version": "1.0.0",
+  "description": "Audio",
+  "main": "index.html",
+  "author": "onflapp",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "^3.7.1"
+  }
+}

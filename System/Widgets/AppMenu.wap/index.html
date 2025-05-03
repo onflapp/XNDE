@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+  </head>
+  <body>
+    <ol id="menu"></ol>
+  </body>
+  <script>
+    $(document).on('click', 'a', function(evt) {
+      let href = evt.target.href;
+      $.get(href);
+
+      evt.preventDefault();
+    });
+
+    $.getJSON("http://localhost:3000/dispatch?name=CONFIG&command=read&section=AppMenu&key=applications", function(rv) {
+      let list = [];
+
+      rv.forEach(function(it) {
+        list.push(`<li><a href="http://localhost:3000/dispatch?name=LAUNCHER&command=launch&path=${it.path}">${it.name}</a></li>`);
+      });
+
+      $('#menu').html(list.join(''));
+    });
+  </script>
+</html>

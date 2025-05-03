@@ -1,0 +1,12 @@
+{
+  "name": "Battery",
+  "productName": "Battery",
+  "version": "1.0.0",
+  "description": "Battery",
+  "main": "index.html",
+  "author": "onflapp",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "^3.7.1"
+  }
+}

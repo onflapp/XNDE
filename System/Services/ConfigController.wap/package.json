@@ -1,0 +1,12 @@
+{
+  "name": "ConfigController",
+  "productName": "ConfigController",
+  "version": "1.0.01",
+  "description": "ConfigController",
+  "main": "main.js",
+  "author": "OnFlApp",
+  "license": "MIT",
+  "dependencies": {
+    "socket.io-client": "^4.8.1"
+  }
+}

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+if [ -z "$3" ];then
+  echo "config read [section] [key]"
+  echo "config write [section] [key] [value]"
+  exit 1
+else
+  if [ "x$1" = "xread" ];then
+    curl -o - "http://localhost:3000/dispatch?name=CONFIG&command=read&section=$2&key=$3"
+  elif [ "x$1" = "xwrite" ];then
+    curl -o - --get --data-urlencode "value=$4" "http://localhost:3000/dispatch?name=CONFIG&command=write&section=$2&key=$3"
+  fi
+  exit $?
+fi

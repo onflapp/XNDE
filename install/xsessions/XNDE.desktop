@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=XNDE
+Comment=This session logs you into XNDE
+Exec=_XNDE_INSTALL_PREFIX_/System/bin/startxnde
+# no icon yet, only the top three are currently used
+Icon=
+Keywords=XNDE Desktop
+Type=Application

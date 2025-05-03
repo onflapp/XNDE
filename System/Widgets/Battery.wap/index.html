@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+  </head>
+  <body>
+    <h3>status:</h3>
+    <div id="output"></div>
+  </body>
+  <script>
+    function refresh() {
+      $.getJSON("http://localhost:3000/dispatch?name=BATTERY&command=status", function(rv) {
+        $('#output').html(JSON.stringify(rv));
+        setTimeout(refresh, 10000);
+      });
+    }
+  
+    refresh();
+  </script>
+</html>

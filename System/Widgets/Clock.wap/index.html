@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+  </head>
+  <body>
+    <h3>clock:</h3>
+    <div id="output"></div>
+  </body>
+  <script>
+    function refresh() {
+      let v = '' + new Date();
+      $('#output').html(v);
+      setTimeout(refresh, 1000);
+    }
+  
+    refresh();
+  </script>
+</html>

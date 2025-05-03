@@ -1,0 +1,12 @@
+{
+  "name": "Desktop",
+  "productName": "Desktop",
+  "version": "1.0.0",
+  "description": "Desktop",
+  "main": "index.html",
+  "author": "onflapp",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "^3.7.1"
+  }
+}

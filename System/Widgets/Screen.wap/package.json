@@ -1,0 +1,12 @@
+{
+  "name": "Screen",
+  "productName": "Screen",
+  "version": "1.0.0",
+  "description": "Screen",
+  "main": "index.html",
+  "author": "onflapp",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "^3.7.1"
+  }
+}
