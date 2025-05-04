@@ -1,0 +1,5 @@
+{
+  "name": "XXXyyy",
+  "main": "main.js",
+  "chromium-args": "--enable-logging=stderr"
+}

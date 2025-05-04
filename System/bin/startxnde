@@ -23,7 +23,7 @@ start_launcher() {
 }
 
 start_display() {
-  A="./System/Services/Display"
+  A="./System/Services/Display/Chrome"
   update_wap $A || exit 1
   node $A/main.js &
   echo "$!" > $DISPLAY_PID_FILE

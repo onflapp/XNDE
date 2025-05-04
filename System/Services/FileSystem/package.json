@@ -1,0 +1,13 @@
+{
+  "name": "FileSystem",
+  "productName": "FileSystem",
+  "version": "1.0.0",
+  "description": "FileSystem",
+  "main": "main.js",
+  "author": "OnFlApp",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^4.8.1"
+  }
+}

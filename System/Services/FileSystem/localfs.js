@@ -24,14 +24,13 @@ function entity_info(entity) {
 }
 
 function handle_file_request(req, res) {
-  const reg = require('shared/registry');
-  const base = reg.get_property('BASE_DIR');
+  const base = "/";
   const path = require('path');
   const fs = require('fs');
 
   let fullPath = req.path;
   if (fullPath == '/') fullPath = base;
-  else fullPath = base + unescape(req.path);
+  else fullPath = path.resolve(base, unescape(req.path));
 
   console.log(fullPath);
 
@@ -39,22 +38,42 @@ function handle_file_request(req, res) {
     let entity = fs.lstatSync(fullPath);
     entity.name = path.basename(fullPath);
 
-    if (entity.isDirectory() && entity.name.endsWith('.app')) {
-      //launcher.launch_app(fullPath);
+    if (entity.isDirectory()) {
+      res.setHeader('Content-Type', 'text/html');
+      res.writeHead(200);
 
-      res.writeHead(200);
-      res.end('done');
-    }
-    else if (entity.isDirectory()) {
-      res.setHeader('Content-Type', 'application/json');
-      res.writeHead(200);
-      res.end(JSON.stringify(list_dir(fullPath)));
+      let ls = list_dir(fullPath).sort(function(a, b) { return (a.name > b.name) });
+      let rv = [];
+
+      rv.push('<!DOCTYPE html><html><head><title>'+req.path+'</title></head><body>');
+      rv.push('<ul>');
+
+      let = dir = path.resolve(fullPath, '..');
+      rv.push('<li><a href="'+dir+'">../</a></li>');
+
+      for (let i = 0; i < ls.length; i++) {
+        let it = ls[i];
+        let p = req.path;
+        let n = it.name;
+
+        if (!p.endsWith('/')) p += '/';
+        p += escape(it.name);
+        if (it.type == 'd') {
+          p += '/';
+          n += '/';
+        }
+
+        rv.push('<li><a href="'+p+'">'+n+'</a></li>');
+      }
+      rv.push('</ul>');
+      rv.push('</body></html>');
+      res.end(rv.join(''));
     }
     else if (entity.isFile()) {
       res.sendFile(fullPath);
     }
     else {
-      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Type', 'text/html');
       res.writeHead(200);
       res.end(JSON.stringify(entity_info(entity)));
     }

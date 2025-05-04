@@ -130,3 +130,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+System/Services/SystemController.wap/modules/helpers/events_helper
+System/Services/SystemController.wap/modules/helpers/gesture_helper
+System/Services/SystemController.wap/modules/helpers/keyboard_helper
