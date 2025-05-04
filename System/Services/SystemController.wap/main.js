@@ -18,7 +18,7 @@ function init_module(name, cb) {
 
 function init_modules(cb) {
   init_module("battery", cb);
-  init_module("display",cb);
+  init_module("monitor",cb);
   init_module("audio", cb);
 }
 

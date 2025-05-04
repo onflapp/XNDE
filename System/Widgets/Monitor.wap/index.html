@@ -22,7 +22,7 @@
 
     function refresh() {
       clearTimeout(window.refreshtm);
-      $.getJSON("http://localhost:3000/dispatch?name=SCREEN&command=status", function(rv) {
+      $.getJSON("http://localhost:3000/dispatch?name=MONITOR&command=status", function(rv) {
         $('#output').html(JSON.stringify(rv));
         window.refreshtm = setTimeout(refresh, 5000);
       });

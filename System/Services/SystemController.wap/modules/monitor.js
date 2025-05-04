@@ -3,7 +3,7 @@ const proc = require('child_process');
 function exec(cmd, args, cb) {
   let app = proc.spawn(cmd, args, {});
   let buff = '';
-  
+
   app.stderr.on('data', function(data) {
     console.error(data.toString());
   });
@@ -29,7 +29,7 @@ function exec(cmd, args, cb) {
 }
 
 function init_display(cb) {
-  cb("SCREEN");
+  cb("MONITOR");
 }
 
 function handle_message(msg, cb) {
@@ -43,7 +43,7 @@ function handle_message(msg, cb) {
           backlight = v.substr(0, v.length-1);
         }
       });
-      
+
       if (backlight) {
         let rv = {};
         rv['brightness'] = backlight;

@@ -75,8 +75,8 @@ dispatch waitfor DISPLAY 1
 dispatch waitfor LAUNCHER 1
 
 ## launch system applications
-#launch System/Services/SystemController.wap
-
+launch System/Services/FileSystem.wap
+launch System/Services/SystemController.wap
 launch System/Services/ConfigController.wap
 dispatch waitfor CONFIG 1
 
