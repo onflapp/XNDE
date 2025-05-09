@@ -1,43 +1,33 @@
 var x11 = require('x11/lib');
 var EventEmitter = require('events').EventEmitter;
 
-var X, root, white;
-
-var FRAME_TITLE = 20;
-var FRAME_BORDER = 2;
-var FRAME_FOOTER = 10;
-
+var X, root, white, black, colormap;
 var frames = {};
-var dragStart = null;
 
-async function Initialize() {
-	X.atoms.WM_PROTOCOLS = await GetAtom("WM_PROTOCOLS");
-	X.atoms.WM_DELETE_WINDOW = await GetAtom("WM_DELETE_WINDOW");
+async function initialize() {
+	X.atoms.WM_PROTOCOLS = await getAtom("WM_PROTOCOLS");
+	X.atoms.WM_DELETE_WINDOW = await getAtom("WM_DELETE_WINDOW");
+
+	x11.ButtonPress = 4;
+	x11.ButtonRelease = 5;
+	x11.MotionNotify = 6;
+	x11.MapRequest = 20;
+	x11.ConfigureRequest = 23;
+	x11.Expose = 12;
+	x11.DestroyNotify = 17;
+	x11.UnmapNotify = 18;
 }
 
-function MoveAll(xoff) {
-	for (var fid in frames) {
-		var f = frames[fid];
-			winX = f.x + xoff;
-			X.MoveWindow(fid, winX, f.y);
-			f.x = winX;
-	}
+function makeMouseEvent(ev) {
+	return {
+		x:ev.x,
+		y:ev.y,
+		rootx:ev.rootx,
+		rooty:ev.rooty
+	};
 }
 
-function CloseWindow(fid) {
-	var f = frames[fid];
-
-  var eventData = new Buffer(32);
-  eventData.writeInt8(33, 0);                       //Event Type 33 = ClientMessage
-  eventData.writeInt8(32,  1);                      //Format
-  eventData.writeInt32LE(f.wid, 4);                 //Window ID
-  eventData.writeInt32LE(X.atoms.WM_PROTOCOLS, 8);  //Message Type
-  eventData.writeInt32LE(X.atoms.WM_DELETE_WINDOW, 12); 
-	
-  X.SendEvent(f.wid, false, 0, eventData);
-}
-
-function RestoreFrames() {
+function restoreWindows() {
 	for (var fid in frames) {
 		var f = frames[fid];
 		X.ReparentWindow(f.wid, root, f.x, f.y);
@@ -45,36 +35,31 @@ function RestoreFrames() {
 	var frames = {};
 }
 
-function DrawFrame(f) {
-	X.PolyLine(0, f.fid, f.GC, [0, 0, f.width-1, 0,
-				                           f.width-1, f.height,
-				                           f.width-1, f.height-1,
-				                           0, f.height-1,
-				                           0, 0]);
-	X.PolyText8(f.fid, f.GC, 14, 14, [f.title]);
-}
-
-async function GetWindowProtocols(wid) {
+async function getProtocols(wid) {
 	return new Promise(function (resolve) {
 		X.GetProperty(0, wid, X.atoms.WM_PROTOCOLS, 0, 0, 10000000, function(err, prop) {
 			var numAtoms = prop.data.length/4;
 			var res = [];
-			for (var i=0; i < prop.data.length; i+=4) {
-				var a = prop.data.unpack('L', i)[0];
-				X.GetAtomName(a, function(err, str) {
-					res.push(str);
-					if (res.length === numAtoms) {
-						resolve(res);
-						return;
-					}
-				});
+			if (numAtoms > 0) {
+				for (var i=0; i < prop.data.length; i+=4) {
+					var a = prop.data.unpack('L', i)[0];
+					X.GetAtomName(a, function(err, str) {
+						res.push(str);
+						if (res.length === numAtoms) {
+							resolve(res);
+							return;
+						}
+					});
+				}
 			}
-			resolve(res);
+			else {
+				resolve(res);
+			}
 		});
 	});
 }
 
-function GetAtom(name) {
+async function getAtom(name) {
 	return new Promise(function (resolve) {
 		X.InternAtom(false, name, function(err, atom) {
       resolve(atom);
@@ -82,7 +67,7 @@ function GetAtom(name) {
 	});
 }
 
-function GetWindowAttributes(wid) {
+async function getAttributes(wid) {
 	return new Promise(function (resolve) {
   	X.GetWindowAttributes(wid, function(err, attrs) {
 		  if (attrs[8]) { // override-redirect flag
@@ -97,7 +82,7 @@ function GetWindowAttributes(wid) {
   });
 }
 
-function GetWindowGeometry(wid) {
+function getGeometry(wid) {
   return new Promise(function(resolve) {
     X.GetGeometry(wid, function(err, clientGeom) {
       resolve(clientGeom);
@@ -105,36 +90,48 @@ function GetWindowGeometry(wid) {
   });
 }
 
-function HandleRootEvents(ev) {
+function closeWindow(wid) {
+  var eventData = new Buffer(32);
+  eventData.writeInt8(33, 0);                       //Event Type 33 = ClientMessage
+  eventData.writeInt8(32,  1);                      //Format
+  eventData.writeInt32LE(wid, 4);                 //Window ID
+  eventData.writeInt32LE(X.atoms.WM_PROTOCOLS, 8);  //Message Type
+  eventData.writeInt32LE(X.atoms.WM_DELETE_WINDOW, 12); 
+	
+  X.SendEvent(wid, false, 0, eventData);
+}
+
+function handleRootEvents(ev) {
 	try {
-		//console.log(ev);
-		if (ev.type === 20) {       // MapRequest
-			if (!frames[ev.wid]) {
-				ManageWindow(ev.wid, false);
-			}
-			return;
+		if (ev.type == x11.MapRequest) {
+			manageWindow(ev.wid, false);
 		} 
-		else if (ev.type === 23) { // ConfigureRequest
+		else if (ev.type == x11.ConfigureRequest) {
 			X.ResizeWindow(ev.wid, ev.width, ev.height);
 		}
-		else if (ev.type === 12) { // expose
+		else if (ev.type == x11.Expose) {
 		}
-		else if (ev.type === 2) { // KeyDown
+		else if (ev.type == 2) { // KeyDown
 		}
-		else if (ev.type === 4) { // Button
-			//console.log(ev);
-			if (ev.keycode == 6)      MoveAll(1);
-			else if (ev.keycode == 7) MoveAll(-1);
+		else if (ev.type == x11.ButtonPress && ev.wid == root) {
+			//var events = x11.eventMask.PointerMotion|x11.eventMask.ButtonRelease;
+			//X.GrabPointer(root, 0, events, 0, 0, 0, 0, 0); 
 		}
-		else if (ev.type === 17) { // DestroyNotify
-			for (var fid in frames) {
-				var f = frames[fid];
-				if (f.wid == ev.wid) {
-					X.DestroyWindow(fid);
-					delete frames[fid];
-					return;
-				}
-			}
+		else if (ev.type == x11.ButtonRelease) {
+			console.log('aaa');
+			//X.UngrabPointer(ev.wid, 0);
+		}
+		else if (ev.type == x11.MotionNotify) {
+			console.log('x:'+ev.wid);
+		}
+		else if (ev.type == x11.UnmapNotify) {
+			destroyFrame(ev.wid);
+		}
+		else if (ev.type == x11.DestroyNotify) {
+			destroyFrame(ev.wid);
+		}
+		else {
+			console.log(ev);
 		}
 	}
 	catch (ex) {
@@ -142,70 +139,27 @@ function HandleRootEvents(ev) {
 	}
 }
 
-function AdjustWindowFrame(windowRect, clientRect, borderWidth) {
-
-	var bw = borderWidth * 2;
-  windowRect.width = clientRect.width + (FRAME_BORDER * 2) + bw;
-	windowRect.height = clientRect.height + FRAME_TITLE + FRAME_FOOTER;
-
-	if (windowRect.height > 500) {
-		windowRect.height = 500;
-		clientRect.height = windowRect.height - FRAME_TITLE - FRAME_FOOTER;
-	}
-	if (windowRect.width > 500) {
-		windowRect.width = 500;
-		clientRect.width = windowRect.width - (FRAME_BORDER) * 2 - bw;
-	}
-}
-
-function HandleFrameEvents(ev) {
+function handleFrameEvents(ev) {
 	try {
-		//console.log(ev);
-		var f = frames[ev.wid];
-		if (ev.type == 4) { // MouseDown
-			X.RaiseWindow(ev.wid);
-			X.SetInputFocus(f.wid, 1);
-			dragStart = { 
-				rootx: ev.rootx, rooty: ev.rooty, 
-				x: ev.x, y: ev.y, 
-				winX: f.x, winY: f.y,
-				winW: f.width, winH: f.height
-			};
-
-			if (ev.y > FRAME_TITLE && ev.x > FRAME_BORDER) dragStart.resize = true;
-			else if (ev.y < FRAME_TITLE && ev.x < FRAME_TITLE) {
-        CloseWindow(f.fid);
-      }
-			else dragStart.move = true;
-		} 
-		else if (ev.type == 5) {
-			dragStart = null;
-		} 
-		else if (ev.type == 6) { // Mouse Up
-			if (dragStart && dragStart.move) {
-							winX = dragStart.winX + ev.rootx - dragStart.rootx;
-							winY = dragStart.winY + ev.rooty - dragStart.rooty;
-							X.MoveWindow(f.fid, winX, winY);
-							f.x = winX;
-							f.y = winY;
-			}
-			else if (dragStart && dragStart.resize) {
-				//resize frame window
-				winW = dragStart.winW + ev.rootx - dragStart.rootx;
-				winH = dragStart.winH + ev.rooty - dragStart.rooty;
-				X.ResizeWindow(ev.wid, winW, winH);
-
-				f.width = winW;
-				f.height = winH;
-
-				//resize inner window
-				winW = winW - (FRAME_BORDER * 2) - f.border;
-				winH = winH - FRAME_TITLE - FRAME_FOOTER;
-				X.ResizeWindow(f.wid, winW, winH);
-			}
-		} 
-		else if (ev.type == 12) { //expose
-			DrawFrame(f);
+		var frame = frames[ev.wid];
+		if (!frame) {
+			console.log('window not managed');
+			return;
+		}
+		if (ev.type == x11.Expose) {
+			frame.win.ondraw(frame, X);
+		}
+		else if (ev.type == x11.ButtonPress) {
+			frame.win.onmousedown(frame, makeMouseEvent(ev));
+		}
+		else if (ev.type == x11.ButtonRelease) {
+			frame.win.onmouseup(frame, makeMouseEvent(ev));
+		}
+		else if (ev.type == x11.MotionNotify) {
+			frame.win.onmousemove(frame, makeMouseEvent(ev));
+		}
+		else {
+			//console.log(ev);
 		}
 	}
 	catch (ex) {
@@ -213,19 +167,141 @@ function HandleFrameEvents(ev) {
 	}
 }
 
-async function ManageWindow(wid, preserve) {
+function createFrame(fid, wid, cb) {
+	var frame = {
+		fid:fid,
+		wid:wid
+	};
+
+	frame.moveToForeground = function() {
+		X.RaiseWindow(fid);
+	};
+
+	frame.moveToPosition = function(x, y) {
+		X.MoveWindow(fid, x, y);
+		frame.rect.x = x;
+		frame.rect.y = y;
+
+		frame.win.onresize(frame);
+	};
+
+	frame.resizeToSize = function(w, h) {
+		X.ResizeWindow(fid, w, h);
+		frame.rect.width = w;
+		frame.rect.height = h;
+
+		var r = frame.win.innerRect();
+		X.ResizeWindow(wid, r.width, r.height);
+
+		frame.win.onresize(frame);
+	};
+
+	frame.takeFocus = function() {
+		X.SetInputFocus(wid, 1);
+	};
+
+	frame.close = function() {
+		if (frame.protos.indexOf('WM_DELETE_WINDOW') != -1) {
+			console.log('delete');
+			closeWindow(frame.wid);
+		}
+		else {
+			console.log('destroy');
+			X.DestroyWindow(frame.wid);
+		}
+	};
+
+	frame.redrawAllFrames = function() {
+		for (var f in frames) {
+			var frame = frames[f];
+			X.ClearArea(frame.fid, 0, 0, 0, 0, 1);
+		}
+	};
+
+	frame.allocColor = async function(fg) { 
+		return new Promise(function (resolve) {
+			X.AllocColor(colormap, fg[0], fg[1], fg[2], function(err, color) {
+				if (color) {
+					var gc = X.AllocID();
+					X.CreateGC(gc, fid, { foreground: color.pixel, background: black });
+					resolve(gc);
+				}
+				else {
+					console.log(err);
+					resolve(null);
+				}
+			});
+		});
+	};
+
+	frame.drawText = function(gc, x, y, text) {
+		X.PolyText8(fid, gc, x, y, text);
+	};
+
+	frame.drawLine = function() {
+	/*
+	X.PolyLine(0, fid, GC, [0, 0, f.width-1, 0,
+				                           f.width-1, f.height,
+				                           f.width-1, f.height-1,
+				                           0, f.height-1,
+				                           0, 0]);
+	*/
+	};
+
+	frame.fillRectangle = function(gc, x, y, w, h) {
+		X.PolyFillRectangle(fid, gc, [x, y, w, h]);
+	};
+
+	require('./window.js').createWindow(frame, function(win) {
+		frame.win = win;
+
+		frames[fid] = frame;
+		cb(frame);
+	});
+}
+
+function destroyFrame(wid) {
+	var frame = null;
+	for (var fid in frames) {
+		var f = frames[fid];
+		if (f.fid == wid || f.wid == wid) {
+			frame = f;
+			break;
+		}
+	}
+console.log('destroyFrame');
+
+	if (frame) {
+		X.DestroyWindow(frame.wid);
+		X.DestroyWindow(frame.fid);
+
+		delete frames[f.fid];
+	}
+}
+
+function frameForWindowID(wid) {
+	for (var fid in frames) {
+		var frame = frames[fid];
+		if (frame.wid == wid) return frame;
+	}
+	return null;
+}
+
+async function manageWindow(wid, preserve) {
 	console.log("MANAGE WINDOW: " + wid + ",preserve:" + preserve);
-	var attrs = await GetWindowAttributes(wid);
+	var attrs = await getAttributes(wid);
 	if (attrs == null) {
 		cosole.log("no attributes");
 		return;
 	}
 
 	var fid = X.AllocID();
-	var clientRect = await GetWindowGeometry(wid);
-	var windowRect = {};
+	var wrect = await getGeometry(wid);
+	var frect = wrect;
+	frect.x = frect.xPos;
+	frect.y = frect.yPos;
 
-  var protos = await GetWindowProtocols(wid);
+  var protos = await getProtocols(wid);
 	console.log(protos);
 
 	if (preserve && attrs.mapState != 2) { //not mapped
@@ -238,21 +314,10 @@ async function ManageWindow(wid, preserve) {
 		return;
 	}
 
-	frames[fid] = {
-		wid:wid,
-		fid:fid
-	};
-
-	if (preserve) {
-		windowRect.xPos = clientRect.xPos;
-		windowRect.yPos = clientRect.yPos;
+	if (!preserve) {
+		frect.x = parseInt(Math.random()*300);
+		frect.y = parseInt(Math.random()*300);
 	}
-	else {
-		windowRect.xPos = parseInt(Math.random()*300);
-		windowRect.yPos = parseInt(Math.random()*300);
-	}
-
-	AdjustWindowFrame(windowRect, clientRect, clientRect.borderWidth);
 
 	var events = x11.eventMask.Button1Motion
 			    |x11.eventMask.ButtonPress
@@ -261,43 +326,37 @@ async function ManageWindow(wid, preserve) {
 			    |x11.eventMask.SubstructureRedirect
 			    |x11.eventMask.Exposure;
 
-	
-	//console.log("CreateWindow", fid, root);
-	//console.log(windowRect);
-
-	X.CreateWindow(fid, root, windowRect.xPos, windowRect.yPos, 
-		  windowRect.width, windowRect.height, 
-			0, 0, 0, 0,
-			{ backgroundPixel: white, eventMask: events });
-
-	var gc = X.AllocID();
-	X.CreateGC(gc, wid, {foreground:black, background:white});
-
-	frames[fid].width = windowRect.width;
-	frames[fid].height = windowRect.height;
-	frames[fid].protocols = protos;
-	frames[fid].x = windowRect.xPos;
-	frames[fid].y = windowRect.yPos;
-	frames[fid].border = clientRect.borderWidth;
-	frames[fid].GC = gc;
-	frames[fid].title = 'Close | New | Clone | Managed Window ' + fid;
+	X.CreateWindow(fid, root, 
+		frect.x, frect.y,
+		frect.width, frect.height, 
+		0, 0, 0, 0,
+		{ backgroundPixel: white, eventMask:events });
 
 	var ee = new EventEmitter();
 	X.event_consumers[fid] = ee;
-	ee.on('event', HandleFrameEvents);
+	ee.on('event', handleFrameEvents);
 
-	X.ChangeSaveSet(1, wid);
-	X.ResizeWindow(wid, clientRect.width, clientRect.height);
-	X.ReparentWindow(wid, fid, FRAME_BORDER, FRAME_TITLE);
-	console.log("MapWindow "+wid+"->"+fid);
-	X.MapWindow(fid);
-	X.MapWindow(wid);
+	createFrame(fid, wid, function(frame) {
+		frame.protos = protos;
+		frame.rect = frect;
+		frame.win.onresize(frame);
 
-	X.GrabKey(wid, 0, 64, 46, 1, 1);
+		wrect = frame.win.innerRect();
+
+		X.ChangeSaveSet(1, wid);
+		X.ResizeWindow(wid, wrect.width, wrect.height);
+		X.ReparentWindow(wid, fid, wrect.x, wrect.y);
+
+		console.log("MapWindow "+wid+"->"+fid);
+		X.MapWindow(fid);
+		X.MapWindow(wid);
+	});
+
+	//X.GrabKey(wid, 0, 64, 46, 1, 1);
 	//X.GrabButton(wid, 0, 0, 1, 1, 0, 0, 0);
 }
 
-function StartWM() {
+function startWM() {
 	var client = x11.createClient(function(err, display) {
 		X = display.client;
 
@@ -307,11 +366,15 @@ function StartWM() {
 			root = display.screen[0].root;
 			white = display.screen[0].white_pixel;
     	black = display.screen[0].black_pixel;
+    	colormap = display.screen[0].default_colormap;
 			console.log('root = ' + root);
 
 			var events = x11.eventMask.Exposure
-						|x11.eventMask.ButtonPress
-						|x11.eventMask.SubstructureRedirect;
+				|x11.eventMask.ButtonPress
+				|x11.eventMask.ButtonRelease
+				|x11.eventMask.MotionNotify
+				|x11.eventMask.StructureNotify
+				|x11.eventMask.SubstructureRedirect;
 
 			X.ChangeWindowAttributes(root, {eventMask:events}, function(err) {
 				if (err.error == 10) {
@@ -321,26 +384,26 @@ function StartWM() {
 
 			});
 
-			Initialize();
+			initialize().then(function() {
+				client.on('event', handleRootEvents);
 
-			X.QueryTree(root, function(err, tree) {
-				tree.children.forEach(function(wid) {
-					ManageWindow(wid, true);
+				X.QueryTree(root, function(err, tree) {
+					tree.children.forEach(function(wid) {
+						manageWindow(wid, true);
+					});
 				});
 			});
 		});
 	});
 
 	client.on('error', function(err) {
-		console.error(err);
+		console.error('x11:'+err);
 	});
 
-	client.on('event', HandleRootEvents);
-
 	process.on('SIGINT', function() {
-		RestoreFrames();
+		restoreWindows();
 		process.exit(0);
 	});
 }
 
-exports.start_process = StartWM;
+exports.start_process = startWM;
