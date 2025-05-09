@@ -30,7 +30,7 @@ function createWindow(frame, cb) {
 }
 
 function FrameWindow () {
-	this.title = ':::: xxx ::::';
+	this.title = '[xxx]';
 	this.isActive = false;
 	this.rect = {};
 	this.commandsLeft = [];
@@ -41,7 +41,6 @@ FrameWindow.prototype.initialize = async function(frame) {
 	this.addCommand(-1, '| copy |', 'new');
 	this.addCommand(-1, '| paste |', 'min');
 	this.addCommand( 1, '|  x  |', 'close');
-	this.addCommand( 1, '|  z  |', 'min');
 
 	this.activeBg = await frame.allocColor(parseColor('#ff5f03'));
 	this.activeFg = await frame.allocColor(parseColor('#bfbfbf'));
@@ -164,9 +163,9 @@ FrameWindow.prototype.onmousemove = function(frame, evt) {
 		var x = dragStart.originx + evt.rootx - dragStart.rootx;
 		var y = dragStart.originy + evt.rooty - dragStart.rooty;
 
-		if (y > 0) {
-			frame.moveToPosition(x, y);
-		}
+		if (y <  0) y = 0;
+
+		frame.moveToPosition(x, y);
 	}
 	else if (dragStart && dragStart.command == 'resize') {
 		var w = dragStart.originw + evt.rootx - dragStart.rootx;

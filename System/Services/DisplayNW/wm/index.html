@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>frame</title>
+    <style>
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background-color: gray;
+}
+
+#titlebar {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  height: 40px;
+  background-color: blue;
+}
+
+#title {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  right: 40px;
+  height: 40px;
+}
+
+#close {
+  position: fixed;
+  top: 0px;
+  right: 0px;
+  height: 40px;
+  width: 40px;
+  background-color: gray;
+}
+
+#content {
+  position: fixed;
+  top: 40px;
+  left: 0px;
+  right: 0px;
+  bottom: 20px;
+  background-color: green;
+}
+
+#resize {
+  position: fixed;
+  left: 0px;
+  right: 0px;
+  height: 20px;
+  bottom: 0px;
+  background-color: yellow;
+}
+  </style>
+
+  </head>
+  <body>
+    <div id="titlebar">
+      <div id="title">name</div>
+      <div id="close">X</div>
+    </div>
+    <div id="content"></div>
+    <div id="resize"></div>
+  </body>
+  <script>
+    
+
+  var nwWin = nw.Window.get();
+
+
+  var isMoving = false;
+  var moveOrigin = {x:0, y:0};
+
+  var titleEl = document.getElementById('title');
+  var closeEl = document.getElementById('close');
+  var resizeEl = document.getElementById('resize');
+  var contentEl = document.getElementById('content');
+
+  /*
+  document.addEventListener('click', function(evt) {
+    console.log('click');
+    evt.preventDefault();
+  });
+  */
+
+  document.onmousedown = function(evt) {
+    isMoving = true;
+    moveOrigin.x = evt.x;
+    moveOrigin.y = evt.y;
+    evt.preventDefault();
+  };
+
+  document.onmouseleave = function(evt) {
+    if (isMoving) {
+      evt.preventDefault();
+      isMoving = false;
+    }
+  };
+
+  document.onmouseup = function(evt) {
+    if (isMoving) {
+      evt.preventDefault();
+      isMoving = false;
+    }
+  };
+
+  document.onmousemove = function(evt) {
+    if (isMoving) {
+      console.log('move');
+      nwWin.moveTo(evt.screenX - moveOrigin.x, evt.screenY - moveOrigin.y);
+      evt.preventDefault();
+    }
+  };
+
+  var isResizing = false;
+  var resizeOrigin = {x:0, y:0};
+
+  resizeEl.addEventListener('mousedown', function(evt) {
+    isResizing = true;
+    resizeOrigin.x = evt.x;
+    resizeOrigin.y = evt.y;
+    evt.preventDefault();
+  });
+
+  resizeEl.addEventListener('mouseleave', function(evt) {
+    if (isResizing) {
+      evt.preventDefault();
+      //isResizing = false;
+    }
+  });
+
+  resizeEl.addEventListener('mouseup', function(evt) {
+    if (isResizing) {
+      evt.preventDefault();
+      isResizing = false;
+    }
+  });
+
+  resizeEl.addEventListener('mousemove', function(evt) {
+    if (isResizing) {
+      console.log('move');
+      //nwWin.moveTo(e.screenX - dragOrigin.x, e.screenY - dragOrigin.y);
+      evt.preventDefault();
+    }
+  });
+
+  </script>
+</html>

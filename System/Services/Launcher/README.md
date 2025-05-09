@@ -1,0 +1,1 @@
+LAUNCHER launch [path]

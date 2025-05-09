@@ -118,11 +118,10 @@ function handleRootEvents(ev) {
 			//X.GrabPointer(root, 0, events, 0, 0, 0, 0, 0); 
 		}
 		else if (ev.type == x11.ButtonRelease) {
-			console.log('aaa');
 			//X.UngrabPointer(ev.wid, 0);
 		}
 		else if (ev.type == x11.MotionNotify) {
-			console.log('x:'+ev.wid);
+			//console.log('x:'+ev.wid);
 		}
 		else if (ev.type == x11.UnmapNotify) {
 			destroyFrame(ev.wid);
@@ -131,7 +130,7 @@ function handleRootEvents(ev) {
 			destroyFrame(ev.wid);
 		}
 		else {
-			console.log(ev);
+			//console.log(ev);
 		}
 	}
 	catch (ex) {
@@ -150,6 +149,7 @@ function handleFrameEvents(ev) {
 			frame.win.ondraw(frame, X);
 		}
 		else if (ev.type == x11.ButtonPress) {
+			console.log(ev);
 			frame.win.onmousedown(frame, makeMouseEvent(ev));
 		}
 		else if (ev.type == x11.ButtonRelease) {
@@ -319,7 +319,7 @@ async function manageWindow(wid, preserve) {
 		frect.y = parseInt(Math.random()*300);
 	}
 
-	var events = x11.eventMask.Button1Motion
+	var events = x11.eventMask.ButtonMotion
 			    |x11.eventMask.ButtonPress
 			    |x11.eventMask.ButtonRelease
 			    |x11.eventMask.SubstructureNotify
@@ -400,10 +400,18 @@ function startWM() {
 		console.error('x11:'+err);
 	});
 
+	/*
 	process.on('SIGINT', function() {
 		restoreWindows();
 		process.exit(0);
 	});
+	*/
+}
+
+function stopWM() {
+	restoreWindows();
+	X.close();
 }
 
 exports.start_process = startWM;
+exports.stop_process = stopWM;

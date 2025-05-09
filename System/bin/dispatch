@@ -6,6 +6,7 @@ if [ -z "$2" ];then
   echo "dispatch waitfor [name] [timeout]"
   echo ""
   echo "dispatch registry list"
+  echo "dispatch registry shutdown"
   exit 1
 elif [ "x$1" = "xregistry" ];then
     curl -o - "http://localhost:3000/dispatch?name=registry&command=$2"

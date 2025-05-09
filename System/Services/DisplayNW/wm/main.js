@@ -104,6 +104,19 @@ function GetWindowGeometry(wid) {
   });
 }
 
+function HandleFrameEvents(ev) {
+	try {
+		console.log('xxxxxx:'+JSON.stringify(ev));
+		var frame = findFrameForWID(ev.wid);
+		if (ev.type === 18) { // UnMapNotify
+			frame.win.close();
+		}
+	}
+	catch (ex) {
+		console.log(ex);
+	}
+}
+
 function HandleRootEvents(ev) {
 	try {
 		console.log(':'+ev.type);
@@ -124,6 +137,7 @@ function HandleRootEvents(ev) {
 		else if (ev.type === 4) { // Button
 		}
 		else if (ev.type === 17) { // DestroyNotify
+			console.log('DESTROY');
 			for (var fid in frames) {
 				var f = frames[fid];
 				if (f.wid == ev.wid) {
@@ -132,77 +146,6 @@ function HandleRootEvents(ev) {
 					return;
 				}
 			}
-		}
-	}
-	catch (ex) {
-		console.log(ex);
-	}
-}
-
-function AdjustWindowFrame(windowRect, clientRect, borderWidth) {
-
-	var bw = borderWidth * 2;
-  windowRect.width = clientRect.width + (FRAME_BORDER * 2) + bw;
-	windowRect.height = clientRect.height + FRAME_TITLE + FRAME_FOOTER;
-
-	if (windowRect.height > 500) {
-		windowRect.height = 500;
-		clientRect.height = windowRect.height - FRAME_TITLE - FRAME_FOOTER;
-	}
-	if (windowRect.width > 500) {
-		windowRect.width = 500;
-		clientRect.width = windowRect.width - (FRAME_BORDER) * 2 - bw;
-	}
-}
-
-function HandleFrameEvents(ev) {
-	try {
-		//console.log(ev);
-		var f = frames[ev.wid];
-		if (ev.type == 4) { // MouseDown
-			X.RaiseWindow(ev.wid);
-			X.SetInputFocus(f.wid, 1);
-			dragStart = { 
-				rootx: ev.rootx, rooty: ev.rooty, 
-				x: ev.x, y: ev.y, 
-				winX: f.x, winY: f.y,
-				winW: f.width, winH: f.height
-			};
-
-			if (ev.y > FRAME_TITLE && ev.x > FRAME_BORDER) dragStart.resize = true;
-			else if (ev.y < FRAME_TITLE && ev.x < FRAME_TITLE) {
-        CloseWindow(f.fid);
-      }
-			else dragStart.move = true;
-		} 
-		else if (ev.type == 5) {
-			dragStart = null;
-		} 
-		else if (ev.type == 6) { // Mouse Up
-			if (dragStart && dragStart.move) {
-							winX = dragStart.winX + ev.rootx - dragStart.rootx;
-							winY = dragStart.winY + ev.rooty - dragStart.rooty;
-							X.MoveWindow(f.fid, winX, winY);
-							f.x = winX;
-							f.y = winY;
-			}
-			else if (dragStart && dragStart.resize) {
-				//resize frame window
-				winW = dragStart.winW + ev.rootx - dragStart.rootx;
-				winH = dragStart.winH + ev.rooty - dragStart.rooty;
-				X.ResizeWindow(ev.wid, winW, winH);
-
-				f.width = winW;
-				f.height = winH;
-
-				//resize inner window
-				winW = winW - (FRAME_BORDER * 2) - f.border;
-				winH = winH - FRAME_TITLE - FRAME_FOOTER;
-				X.ResizeWindow(f.wid, winW, winH);
-			}
-		} 
-		else if (ev.type == 12) { //expose
-			DrawFrame(f);
 		}
 	}
 	catch (ex) {
@@ -225,8 +168,17 @@ function findNewFrame() {
 	return null;
 }
 
+function findFrameForWID(wid) {
+	for (var fid in frames) {
+		var f = frames[fid];
+		if (f.wid == wid) return f;
+	}
+	return null;
+}
+
+
 function CreateWMFrame(wid) {
-	nw.Window.open('index.html', {}, function(win) {
+	nw.Window.open('wm/index.html', {}, function(win) {
 		var frame = findNewFrame();
 		if (!frame) {
 			console.log('NO NEW FRAME FOUND!!!!');
@@ -234,10 +186,15 @@ function CreateWMFrame(wid) {
 		}
 
 		frame.wid = wid;
+		frame.win = win;
 		X.ChangeSaveSet(1, wid);
 
-		//X.ResizeWindow(wid, clientRect.width, clientRect.height);
-		X.ReparentWindow(wid, frame.fid, 100, 100);
+		var ee = new EventEmitter();
+		X.event_consumers[wid] = ee;
+		ee.on('event', HandleFrameEvents);
+
+		X.ResizeWindow(wid, 300, 300);
+		X.ReparentWindow(wid, frame.fid, 10, 10);
 		console.log("MapWindow "+wid+"->"+frame.fid);
 		X.MapWindow(frame.fid);
 		X.MapWindow(wid);
@@ -332,4 +289,4 @@ function StartWM() {
 	});
 }
 
-StartWM();
+exports.start_process = StartWM;

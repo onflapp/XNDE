@@ -6,7 +6,6 @@ cleanup() {
   kill $DISPATCHER_PID          2>/dev/null
 }
 
-
 start_dispatcher() {
   A="./System/Services/Dispatcher"
   update_wap $A || exit 1
@@ -23,7 +22,7 @@ start_launcher() {
 }
 
 start_display() {
-  A="./System/Services/Display/Chrome"
+  A="./System/Services/Display"
   update_wap $A || exit 1
   node $A/main.js &
   echo "$!" > $DISPLAY_PID_FILE

@@ -8,6 +8,12 @@ const io = require("socket.io")(http, options);
 
 const registry = require("./registry.js");
 
+function shutdown() {
+  setTimeout(function() {
+    process.exit(0);
+  },500);
+}
+
 function wait_for_object(name, timeout, cb) {
   let s = registry.get_object(name);
   if (s) {
@@ -78,9 +84,14 @@ io.on("connection", function(socket) {
 app.get('/dispatch*', function(req, res) {
   res.set('Access-Control-Allow-Origin', '*');
   console.log(req.query);
-  if (req.query.name == 'registry' && req.query.command == "list") {
+  if (req.query.name == 'registry' && req.query.command == 'list') {
     res.writeHead(200);
     res.end(registry.get_all_object_names().join('\n'));
+  }
+  else if (req.query.name == 'registry' && req.query.command == 'shutdown') {
+    res.writeHead(200);
+    res.end('OK');
+    shutdown();
   }
   else if (req.query.name && req.query.command == "waitfor") {
     wait_for_object(req.query.name, req.query.timeout, function(rv) {
