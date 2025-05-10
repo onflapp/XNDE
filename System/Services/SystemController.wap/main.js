@@ -2,10 +2,13 @@ let modules = {};
 
 function init_module(name, cb) {
   try {
-    let mod = require(`./modules/${name}.js`);
-    mod.init(function(name) {
+    let path = `./modules/${name}.js`;
+
+    let mod = require(path);
+    mod.start_process(function(name) {
       if (name) {
         modules[name] = mod;
+        mod.source_path = path;
         cb(name);
       }
     });
@@ -17,9 +20,26 @@ function init_module(name, cb) {
 }
 
 function init_modules(cb) {
+  init_module("keyboard", cb);
   init_module("battery", cb);
   init_module("monitor",cb);
   init_module("audio", cb);
+}
+
+function stop_modules() {
+  try {
+    for (let k in modules) {
+      let mod = modules[k];
+      mod.stop_process();
+
+      if (mod['source_path']) {
+        decache(mod.source_path);
+      }
+    }
+  }
+  catch(ex) {
+    console.error(ex);
+  }
 }
 
 function lookup_module(name) {
@@ -48,13 +68,24 @@ function socket_client() {
     });
 
     socket.on("dispatch", function(req, cb) {
-      if (req && req.name) {
+      if (req.command === "restart") {
+        stop_modules();
+        setTimeout(function() {
+          init_modules(function(name) {});
+        },1000);
+      }
+      else if (req && req.name) {
         let module = lookup_module(req.name);
         if (module) {
-          module.dispatch(req, function(rv) {
-            let s = JSON.stringify(rv);
-            cb(s);
-          });
+          try {
+            module.dispatch(req, function(rv) {
+              let s = JSON.stringify(rv);
+              cb(s);
+            });
+          }
+          catch(ex) {
+            if (cb) cb("ERROR: "+ex);
+          }
         }
         else {
           if (cb) cb(`ERROR: module ${req.name} not found`);

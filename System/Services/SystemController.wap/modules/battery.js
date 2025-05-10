@@ -30,5 +30,6 @@ function handle_message(msg, cb) {
   }
 }
 
-exports.init = dbus_battery;
+exports.start_process = dbus_battery;
+exports.stop_process = function() {};
 exports.dispatch = handle_message;

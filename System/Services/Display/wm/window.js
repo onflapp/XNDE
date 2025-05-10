@@ -38,9 +38,9 @@ function FrameWindow () {
 }
 
 FrameWindow.prototype.initialize = async function(frame) {
-	this.addCommand(-1, '| copy |', 'new');
-	this.addCommand(-1, '| paste |', 'min');
-	this.addCommand( 1, '|  x  |', 'close');
+	this.addCommand(-1, 'c', 'new');
+	this.addCommand(-1, 'p', 'min');
+	this.addCommand( 1, '[ x ]', 'close');
 
 	this.activeBg = await frame.allocColor(parseColor('#ff5f03'));
 	this.activeFg = await frame.allocColor(parseColor('#bfbfbf'));
@@ -65,6 +65,16 @@ FrameWindow.prototype.innerRect = function() {
 		y:FRAME_TOP,
 		width:this.rect.width - (FRAME_LEFT + FRAME_RIGHT + bw),
 		height:this.rect.height - (FRAME_TOP + FRAME_BOTTOM + bw)
+	};
+
+	return rv;
+};
+
+FrameWindow.prototype.sizeFromInnerRect = function(rect) {
+	var bw = (this.rect.borderWidth * 2);
+	var rv = {
+		width:rect.width + FRAME_LEFT + FRAME_RIGHT - bw,
+		height:rect.height + FRAME_TOP + FRAME_BOTTOM - bw
 	};
 
 	return rv;

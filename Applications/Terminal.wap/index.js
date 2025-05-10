@@ -61,6 +61,7 @@ function init_xterm() {
   });
 }
 
+window.resizeTo(580,450);
 document.addEventListener('DOMContentLoaded', function() {
   init_xterm();
 });

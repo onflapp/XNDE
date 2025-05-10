@@ -7,12 +7,15 @@ var frames = {};
 async function initialize() {
 	X.atoms.WM_PROTOCOLS = await getAtom("WM_PROTOCOLS");
 	X.atoms.WM_DELETE_WINDOW = await getAtom("WM_DELETE_WINDOW");
+	X.atoms.UTF8_STRING = await getAtom("UTF8_STRING");
 
 	x11.ButtonPress = 4;
 	x11.ButtonRelease = 5;
 	x11.MotionNotify = 6;
 	x11.MapRequest = 20;
 	x11.ConfigureRequest = 23;
+	x11.ConfigureNotify = 22;
+	x11.PropertyNotify = 28;
 	x11.Expose = 12;
 	x11.DestroyNotify = 17;
 	x11.UnmapNotify = 18;
@@ -90,6 +93,52 @@ function getGeometry(wid) {
   });
 }
 
+function getStringProperty(wid, atom) {
+  return new Promise(function(resolve) {
+    X.GetProperty(0, wid, atom, X.atoms.STRING, 0, 10000000, function(err, prop) {
+			if (prop && prop.type == X.atoms.STRING) {
+				resolve(prop.data.toString());
+			}
+			else if (prop && prop.type == X.atoms.UTF8_STRING) {
+    		X.GetProperty(0, wid, atom, X.atoms.UTF8_STRING, 0, 10000000, function(err, prop) {
+					if (prop && prop.type == X.atoms.UTF8_STRING) {
+						resolve(prop.data.toString());
+					}
+					else {
+						resolve(null);
+					}
+				});
+			}
+			else {
+				resolve(null);
+			}
+    });
+  });
+}
+
+function adjustFrameSize(frame) {
+	let wid = frame.wid;
+	let fid = frame.fid;
+	getGeometry(wid).then(function(wrect) {
+		let fsize = frame.win.sizeFromInnerRect(wrect);
+		X.ResizeWindow(fid, fsize.width, fsize.height);
+
+		frame.rect.width = fsize.width;
+		frame.rect.height = fsize.height;
+		frame.win.onresize(frame);
+	});
+}
+
+async function refreshProperties(wid) {
+	let name = await getStringProperty(wid, X.atoms.WM_NAME);
+	let frame = frameForWindowID(wid);
+
+	if (frame && name) {
+		frame.win.title = name;
+		X.ClearArea(frame.fid, 0, 0, 0, 0, 1);
+	}
+}
+
 function closeWindow(wid) {
   var eventData = new Buffer(32);
   eventData.writeInt8(33, 0);                       //Event Type 33 = ClientMessage
@@ -158,9 +207,37 @@ function handleFrameEvents(ev) {
 		else if (ev.type == x11.MotionNotify) {
 			frame.win.onmousemove(frame, makeMouseEvent(ev));
 		}
+		else if (ev.type == x11.ConfigureNotify) {
+			adjustFrameSize(frame);
+		}
 		else {
 			//console.log(ev);
 		}
+	}
+	catch (ex) {
+		console.log(ex);
+	}
+}
+
+function handleWindowEvents(ev) {
+	try {
+		if (ev.type == x11.PropertyNotify && ev.atom == 533) { //time update
+			return;
+		}
+		else if (x11.PropertyNotify) {
+			if (ev.atom) refreshProperties(ev.wid);
+		}
+		else {
+			console.log(ev);
+		}
+
+		/*
+		var frame = frames[ev.wid];
+		if (!frame) {
+			console.log('window not managed');
+			return;
+		}
+		*/
 	}
 	catch (ex) {
 		console.log(ex);
@@ -322,6 +399,7 @@ async function manageWindow(wid, preserve) {
 	var events = x11.eventMask.ButtonMotion
 			    |x11.eventMask.ButtonPress
 			    |x11.eventMask.ButtonRelease
+			    |x11.eventMask.PropertyChange
 			    |x11.eventMask.SubstructureNotify
 			    |x11.eventMask.SubstructureRedirect
 			    |x11.eventMask.Exposure;
@@ -336,6 +414,12 @@ async function manageWindow(wid, preserve) {
 	X.event_consumers[fid] = ee;
 	ee.on('event', handleFrameEvents);
 
+	X.ChangeWindowAttributes(wid, {eventMask:x11.eventMask.PropertyChange});
+
+	ee = new EventEmitter();
+	X.event_consumers[wid] = ee;
+	ee.on('event', handleWindowEvents);
+
 	createFrame(fid, wid, function(frame) {
 		frame.protos = protos;
 		frame.rect = frect;
@@ -348,8 +432,10 @@ async function manageWindow(wid, preserve) {
 		X.ReparentWindow(wid, fid, wrect.x, wrect.y);
 
 		console.log("MapWindow "+wid+"->"+fid);
-		X.MapWindow(fid);
-		X.MapWindow(wid);
+		setTimeout(function() {
+			X.MapWindow(fid);
+			X.MapWindow(wid);
+		},250);
 	});
 
 	//X.GrabKey(wid, 0, 64, 46, 1, 1);
@@ -374,6 +460,7 @@ function startWM() {
 				|x11.eventMask.ButtonRelease
 				|x11.eventMask.MotionNotify
 				|x11.eventMask.StructureNotify
+			  |x11.eventMask.PropertyChange
 				|x11.eventMask.SubstructureRedirect;
 
 			X.ChangeWindowAttributes(root, {eventMask:events}, function(err) {

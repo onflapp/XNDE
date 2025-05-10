@@ -80,5 +80,6 @@ function handle_message(msg, cb) {
   }
 }
 
-exports.init = init_display;
+exports.start_process = init_display;
+exports.stop_process = function() {};
 exports.dispatch = handle_message;

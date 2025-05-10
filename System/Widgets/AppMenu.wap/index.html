@@ -8,6 +8,7 @@
     <ol id="menu"></ol>
   </body>
   <script>
+    window.resizeTo(400, 400);
     $(document).on('click', 'a', function(evt) {
       let href = evt.target.href;
       $.get(href);

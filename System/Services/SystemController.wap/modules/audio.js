@@ -12,6 +12,10 @@ function init_audio(cb) {
   })();
 }
 
+function disconnect_audio() {
+  pa.disconnect();
+}
+
 function get_info(input, output) {
   let rv = {};
   rv['in_description'] = input['description'];
@@ -80,5 +84,6 @@ function handle_message(msg, cb) {
   })();
 }
 
-exports.init = init_audio;
+exports.start_process = init_audio;
+exports.stop_process = disconnect_audio;
 exports.dispatch = handle_message;
