@@ -198,7 +198,6 @@ function handleFrameEvents(ev) {
 			frame.win.ondraw(frame, X);
 		}
 		else if (ev.type == x11.ButtonPress) {
-			console.log(ev);
 			frame.win.onmousedown(frame, makeMouseEvent(ev));
 		}
 		else if (ev.type == x11.ButtonRelease) {

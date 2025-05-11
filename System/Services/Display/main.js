@@ -53,7 +53,6 @@ socket.on("connect", function() {
     console.log("registered DISPLAY");
   });
 
-  start_wm(DEFAULT_WM);
 
   socket.on("dispatch", function(req, cb) {
     console.log(req);
@@ -72,6 +71,8 @@ socket.on("connect", function() {
       if (cb) cb("ERROR: command not found");
     }
   });
+
+  start_wm(DEFAULT_WM);
 });
 
 socket.on("disconnect", function(socket) {

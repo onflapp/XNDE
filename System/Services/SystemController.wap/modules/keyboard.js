@@ -7,7 +7,7 @@ function config_keyboard() {
     SWAP_ALT_CMD:0
   }
 
-  proc.exec('./helpers/keyboard_helper', {env:env}, function(error, stdout, stderr) {
+  proc.exec(`${__dirname}/helpers/keyboard_helper`, {env:env}, function(error, stdout, stderr) {
     console.log(error, stdout, stderr);
   });
 }
