@@ -35,10 +35,15 @@ function socket_client() {
     socket.on("dispatch", function(req, cb) {
       console.log(req);
       if (req.command === "launch" && req.path) {
+        let a = [];
         let p = path.resolve(req.path);
         p = p.substr(global.LAUNCHER_HOME.length+1);
 
-        launcher.launch_app(p, function(msg) {
+        if (req.args && req.args) {
+          a = [req.args];
+        }
+
+        launcher.launch_app(p, a, function(msg) {
           console.log(msg);
           socket.emit("dispatch", msg);
         });

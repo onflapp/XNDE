@@ -53,7 +53,6 @@ socket.on("connect", function() {
     console.log("registered DISPLAY");
   });
 
-
   socket.on("dispatch", function(req, cb) {
     console.log(req);
     if (req.command === "show" && req.url) {

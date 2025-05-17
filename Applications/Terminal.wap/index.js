@@ -1,3 +1,5 @@
+window.SESSION = 0;
+
 function init_xterm() {
   var opts = {
     fontSize:12
@@ -22,13 +24,17 @@ function init_xterm() {
     if (attachAddon) {
       attachAddon.dispose();
     }
+
     client = new WebSocket(`ws://${location.hostname}:${wport}/`);
     attachAddon = new AttachAddon.AttachAddon(client);
     term.loadAddon(attachAddon);
 
     client.addEventListener('open', function() {
-      if (connections == 0) {
+      if (connections == 0) { //the first time
         client.send(escape(JSON.stringify(opts))+'\n');
+      }
+      else { //reconnect to the existing session
+        client.send(escape(JSON.stringify({session:window.SESSION}))+'\n');
       }
       connections++;
     });
@@ -46,10 +52,10 @@ function init_xterm() {
     if (param == 'exit') {
       window.close();
     }
+    else if (param == 'session') {
+      window.SESSION = data[0];
+    }
   });
-
-  function trigger_resize() {
-  }
 
   var func = null;
   window.addEventListener('resize', function() {
@@ -57,11 +63,15 @@ function init_xterm() {
     func = setTimeout(function() {
       fitAddon.fit();
       client.send('\1b[' + term.cols + ';' + term.rows + 'Z');
-    }, 250);
+    }, 100);
   });
 }
 
 window.resizeTo(580,450);
 document.addEventListener('DOMContentLoaded', function() {
   init_xterm();
+});
+
+window.addEventListener('beforeunload', function() {
+  client.send('\1b[closeZ\n');
 });

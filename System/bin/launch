@@ -5,5 +5,15 @@ if [ -z "$1" ];then
   exit 1
 else
   P=`realpath "$1"`
-  curl -o - "http://localhost:3000/dispatch?name=LAUNCHER&command=launch&path=$P"
+  U="http://localhost:3000/dispatch?name=LAUNCHER&command=launch&path=$P"
+
+  if [ "$2" ];then
+    if [ -f "$2" ];then
+      A=`realpath "$2"`
+      U="$U&args=$A"
+    else
+      U="$U&args=$2"
+    fi
+  fi
+  curl -o - "$U"
 fi

@@ -3,23 +3,66 @@ const path = require('path');
 let SPORT = 0;
 let WPORT = 0;
 
+let processes = {};
+
+function write_dcs(connection, param, data) {
+  connection.send('\x1bP?'+data+'S'+param+'\x1b\\');
+}
+
+function kill_zombies(connection) {
+  for (let k in processes) {
+    let process = processes[k];
+    if (process.connection == connection) {
+      console.log(`killing zombie ${k}`);
+      process.kill();
+      delete processes[k];
+    }
+  }
+}
+
 function start_process(cmd, connection, opts) {
   const Pty = require("node-pty");
 
   let shell = (opts.shell?opts.shell:process.env.SHELL);
-  let ptty = Pty.spawn(shell, [], {
-    name: 'xterm-color',
-    cols: (opts.cols?opts.cols:80),
-    rows: (opts.rows?opts.rows:24),
-    cwd: process.env.PWD,
-    env: process.env
-  });
+  let session = opts.session;
+  let ptty = null;
 
+  if (session) {
+    console.log('looking up session ' + session);
+    ptty = processes['pid:'+session];
+    if (!ptty) {
+      connection.send(`session ${session} not found!\n`);
+      return null;
+    }
+  }
+  else {
+    console.log('spawn new process');
+    ptty = Pty.spawn(shell, [], {
+      name: 'xterm-color',
+      cols: (opts.cols?opts.cols:80),
+      rows: (opts.rows?opts.rows:24),
+      cwd: process.env.PWD,
+      env: process.env
+    });
+    if (!ptty) {
+      connection.send(`unable to start process ${shell}\n`);
+      return null;
+    }
+  }
+
+  ptty.connection = connection;
+  ptty.removeAllListeners('exit');
   ptty.on('exit', function(code, signal) {
-    connection.send('\x1bP?'+code+'Sexit\x1b\\');
+    try {
+      write_dcs(connection, 'exit', code);
+    }
+    catch(ex) {};
+
+    delete processes['pid:'+session];
     console.log('process exit');
   });
 
+  ptty.removeAllListeners('data');
   ptty.on('data', function(data) {
     connection.send(data);
   });
@@ -42,11 +85,23 @@ function ws_handle_connection(connection) {
       console.log('start process');
       console.log(opts);
       ptty = start_process('bash', connection, opts);
+
+      if (ptty) {
+        write_dcs(connection, 'session', ptty.pid);
+        processes['pid:'+ptty.pid] = ptty;
+      }
+      else {
+        console.error('cannot start process');
+      }
     }
+
     if (str) {
-      if (str.startsWith('\1b[') && str.endsWith('Z')) { //handle resize
+      if (str.startsWith('\1b[closeZ')) { //handle window close
+        ptty.kill();
+      }
+      else if (str.startsWith('\1b[') && str.endsWith('Z')) { //handle resize
         let a = str.match(/\1b\[(\d+);(\d+)Z/);
-        ptty.resize(Number.parseInt(a[1]), Number.parseInt(a[2]));
+        if (a) ptty.resize(Number.parseInt(a[1]), Number.parseInt(a[2]));
       }
       else {
         ptty.write(str);
@@ -54,11 +109,12 @@ function ws_handle_connection(connection) {
     }
   });
 
-  connection.on('close',
-    function(reasonCode, description) {
-      console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
-    }
-  );
+  connection.on('close', function(reasonCode, description) {
+    console.log('disconnected');
+    setTimeout(function() {
+      kill_zombies(connection);
+    },2000);
+  });
 }
 
 function ws_server(cb) {
@@ -95,6 +151,7 @@ function web_server() {
     ws_server(function(ws) {
       WPORT = ws.address().port;
       console.log("/dispatch?name=DISPLAY&command=show&url="+escape(`http://localhost:${SPORT}/index.html?data=${WPORT}`));
+      console.error(`http://localhost:${SPORT}/index.html?data=${WPORT}`);
     });
   });
 }
