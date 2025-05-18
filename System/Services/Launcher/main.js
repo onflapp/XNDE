@@ -40,7 +40,7 @@ function socket_client() {
         let p = path.resolve(req.path);
         p = p.substr(global.LAUNCHER_HOME.length+1);
 
-        if (req.args && req.args) {
+        if (req.args) {
           a = [req.args];
         }
 

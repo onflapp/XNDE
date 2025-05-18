@@ -150,8 +150,11 @@ function web_server() {
     SPORT = server.address().port;
     ws_server(function(ws) {
       WPORT = ws.address().port;
-      console.log("/dispatch?name=DISPLAY&command=show&url="+escape(`http://localhost:${SPORT}/index.html?data=${WPORT}`));
-      console.error(`http://localhost:${SPORT}/index.html?data=${WPORT}`);
+      let args = '';
+
+      //the first run
+      if (process.argv.length > 2) args = '&args='+escape(process.argv[2]);
+      console.log("/dispatch?name=DISPLAY&command=show&url="+escape(`http://localhost:${SPORT}/index.html?data=${WPORT}${args}`));
     });
   });
 }
@@ -165,7 +168,11 @@ function handle_messages() {
     if (line.indexOf("/dispatch?") == 0) {
       let q = require('url').parse(line, true);
       if (q && q.query) {
-        console.log("/dispatch?name=DISPLAY&command=show&url="+escape(`http://localhost:${SPORT}/index.html?data=${WPORT}`));
+        let args = '';
+
+        //reopen
+        if (q.query.args) args = '&args='+escape(q.query.args);
+        console.log("/dispatch?name=DISPLAY&command=show&url="+escape(`http://localhost:${SPORT}/index.html?data=${WPORT}${args}`));
       }
     }
   });

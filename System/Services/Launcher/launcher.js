@@ -39,7 +39,12 @@ function exec_node_proc(path, main, args, cb) {
     applications[path] = app;
   }
   else {
-    app.stdin.write("/dispatch?command=reopen");
+    let u = "/dispatch?command=reopen";
+    if (args.length) {
+      u += '&args='+escape(args[0]);
+    }
+
+    app.stdin.write(u);
   }
 }
 

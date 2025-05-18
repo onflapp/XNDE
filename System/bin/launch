@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ -z "$1" ];then
-  echo "launch [application path]"
+  echo "launch [application path] [arg]"
   exit 1
 else
   P=`realpath "$1"`
@@ -10,10 +10,11 @@ else
   if [ "$2" ];then
     if [ -f "$2" ];then
       A=`realpath "$2"`
-      U="$U&args=$A"
+      curl --get -o - "$U" --data-urlencode "args=$A"
     else
-      U="$U&args=$2"
+      curl --get -o - "$U" --data-urlencode "args=$2"
     fi
+  else
+    curl --get -o - "$U"
   fi
-  curl -o - "$U"
 fi
