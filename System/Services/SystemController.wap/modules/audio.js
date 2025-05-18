@@ -2,13 +2,14 @@ const PulseAudio = new require('pulseaudio.js');
 
 let pa;
 
-function init_audio(cb) {
+function init_audio(opts, cb) {
   pa = new PulseAudio.PulseAudio();
+  let self = this;
   (async function() {
     con = await pa.connect();
     //console.log(await pa.getServerInfo());
 
-    cb("AUDIO");
+    cb(self, "AUDIO");
   })();
 }
 
@@ -84,6 +85,6 @@ function handle_message(msg, cb) {
   })();
 }
 
-exports.start_process = init_audio;
-exports.stop_process = disconnect_audio;
+exports.init = init_audio;
+exports.stop = disconnect_audio;
 exports.dispatch = handle_message;

@@ -49,6 +49,12 @@ if [ -n "$DISPLAY" ] && [ "$OS" != "Darwin" ] ;then
   init_xwin
 fi
 
+DISPATCHER_PORT=3000
+PATH="$PWD/System/bin:$PATH"
+XNDE_HOME="$PWD"
+
+export DISPATCHER_PORT XNDE_HOME
+
 if [ "$1" = "--safe-mode" ] ;then
   exec xterm -bg black -fg gray
 fi
@@ -58,11 +64,7 @@ trap cleanup INT TERM
 LAUNCHER_PID_FILE="/tmp/$$-laucher.pid"
 DISPLAY_PID_FILE="/tmp/$$-display.pid"
 
-DISPATCHER_PORT=3000
-PATH="$PWD/System/bin:$PATH"
-XNDE_HOME="$PWD"
-
-export LAUNCHER_PID_FILE DISPLAY_PID_FILE DISPATCHER_PORT XNDE_HOME
+export LAUNCHER_PID_FILE DISPLAY_PID_FILE
 
 ## start core services
 start_dispatcher
@@ -74,10 +76,15 @@ dispatch waitfor DISPLAY 1
 dispatch waitfor LAUNCHER 1
 
 ## launch system applications
-launch System/Services/FileSystem.wap
+launch System/Services/StorageController.wap
 launch System/Services/SystemController.wap
 launch System/Services/ConfigController.wap
+
 dispatch waitfor CONFIG 1
+dispatch waitfor STORAGE 1
+dispatch STORAGE mount prefix=ROOT path=/ type=localfs
+dispatch STORAGE mount prefix=HOME "path=$HOME" type=localfs
+dispatch STORAGE mount prefix=SYSTEM "path=$XNDE_HOME" type=localfs
 
 ## launch user applications
 #launch Applications/Terminal.wap

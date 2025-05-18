@@ -3,6 +3,7 @@
   <head>
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <script src="node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="index.js"></script>
   </head>
   <body>
     <a class="control" href="http://localhost:3000/dispatch?name=MONITOR&command=change&brightness=up">up</a>
@@ -11,23 +12,4 @@
     <h3>status:</h3>
     <div id="output"></div>
   </body>
-  <script>
-    $(document).on('click', 'a.control', function(evt) {
-      let href = evt.target.href;
-      $.get(href);
-
-      refresh();
-      evt.preventDefault();
-    });
-
-    function refresh() {
-      clearTimeout(window.refreshtm);
-      $.getJSON("http://localhost:3000/dispatch?name=MONITOR&command=status", function(rv) {
-        $('#output').html(JSON.stringify(rv));
-        window.refreshtm = setTimeout(refresh, 5000);
-      });
-    }
-  
-    refresh();
-  </script>
 </html>

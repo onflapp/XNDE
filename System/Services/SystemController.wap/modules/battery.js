@@ -3,13 +3,14 @@ const bus = dbus.systemBus();
 
 let obj, power, properties;
 
-function dbus_battery(cb) {
+function dbus_battery(opts, cb) {
+  let self = this;
   bus.getProxyObject('org.freedesktop.UPower', '/org/freedesktop/UPower/devices/DisplayDevice').then(function(obj) {
     power = obj.getInterface('org.freedesktop.UPower.Device');
     properties = obj.getInterface('org.freedesktop.DBus.Properties');
 
     console.log("connect battery to DBUS");
-    cb("BATTERY");
+    cb(self, "BATTERY");
   });
 }
 
@@ -30,6 +31,5 @@ function handle_message(msg, cb) {
   }
 }
 
-exports.start_process = dbus_battery;
-exports.stop_process = function() {};
+exports.init = dbus_battery;
 exports.dispatch = handle_message;

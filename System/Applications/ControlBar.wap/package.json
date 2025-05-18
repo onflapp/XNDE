@@ -1,0 +1,13 @@
+{
+  "name": "ControlBar",
+  "productName": "ControlBar",
+  "version": "1.0.0",
+  "description": "ControlBar",
+  "main": "index.html",
+  "author": "onflapp",
+  "license": "MIT",
+  "dependencies": {
+    "jquery": "^3.7.1",
+    "socket.io-client": "^4.8.1"
+  }
+}

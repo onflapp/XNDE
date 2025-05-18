@@ -5,14 +5,18 @@ if [ -z "$2" ];then
   echo "dispatch [name] [command] [opt=val]"
   echo "dispatch waitfor [name] [timeout]"
   echo ""
-  echo "dispatch registry list"
-  echo "dispatch registry shutdown"
+  echo "dispatch REGISTRY list"
+  echo "dispatch REGISTRY shutdown"
   exit 1
-elif [ "x$1" = "xregistry" ];then
-    curl -o - "http://localhost:3000/dispatch?name=registry&command=$2"
+elif [ "x$1" = "xREGISTRY" ];then
+    curl -o - "http://localhost:3000/dispatch?name=REGISTRY&command=$2"
 else
   if [ "x$1" = "xwaitfor" ];then
     curl -o - "http://localhost:3000/dispatch?name=$2&command=waitfor&timeout=$3"
+  elif [ -n "$5" ];then
+    curl -o - "http://localhost:3000/dispatch?name=$1&command=$2&$3&$4&$5"
+  elif [ -n "$4" ];then
+    curl -o - "http://localhost:3000/dispatch?name=$1&command=$2&$3&$4"
   elif [ -n "$3" ];then
     curl -o - "http://localhost:3000/dispatch?name=$1&command=$2&$3"
   else

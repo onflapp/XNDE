@@ -1,1 +1,2 @@
-LAUNCHER launch [path]
+# Launch apps
+

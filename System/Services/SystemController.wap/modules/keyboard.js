@@ -12,16 +12,15 @@ function config_keyboard() {
   });
 }
 
-function init_keyboard(cb) {
+function init_keyboard(opts, cb) {
   config_keyboard();
   
-  if (cb) cb('KEYBOARD');
+  cb(this, 'KEYBOARD');
 }
 
 function handle_message(cb) {
   cb();
 }
 
-exports.start_process = init_keyboard;
-exports.stop_process = function() {};
+exports.init = init_keyboard;
 exports.dispatch = handle_message;

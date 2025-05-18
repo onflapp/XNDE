@@ -73,5 +73,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 window.addEventListener('beforeunload', function() {
-  client.send('\1b[closeZ\n');
+  //client.send('\1b[closeZ\n');
 });

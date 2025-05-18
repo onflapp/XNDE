@@ -1,12 +1,29 @@
-const options = {
-  serveClient:true
+const OPTIONS = {
+  serveClient:true,
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
 };
+
+const ENDPOINTS = [
+  "ws://localhost:3000",
+  "http://localhost:3000/dispatch",
+  "http://localhost:3000/socket.io/socket.io.js"
+];
 
 const app = require("express")();
 const http = require("http").createServer(app);
-const io = require("socket.io")(http, options);
+const io = require("socket.io")(http, OPTIONS);
+const fs = require("fs");
 
 const registry = require("./registry.js");
+
+function obj2str(val) {
+  if (!val) return '';
+  if (typeof val == 'string') return val;
+  return JSON.stringify(val);
+}
 
 function shutdown() {
   setTimeout(function() {
@@ -50,11 +67,11 @@ io.on("connection", function(socket) {
         s.emit("dispatch", req, cb);
       }
       else {
-        if (cb) cb("ERROR: unknown socket");
+        if (cb) cb({error:'unknown socket'});
       }
     }
     else {
-      if (cb) cb("ERROR: unknown name");
+      if (cb) cb({error:'unknown name'});
     }
   });
 
@@ -63,11 +80,11 @@ io.on("connection", function(socket) {
     if (req && req.name) {
       console.log("registered: " + req.name);
       registry.set_object(req.name, socket);
-      if (cb) cb("OK");
+      if (cb) cb({success:'OK'});
     }
     else {
       console.log("register error: unknown name");
-      if (cb) cb("ERROR: unknown name");
+      if (cb) cb({error:'unknown name'});
     }
   });
 
@@ -84,24 +101,31 @@ io.on("connection", function(socket) {
 app.get('/dispatch*', function(req, res) {
   res.set('Access-Control-Allow-Origin', '*');
   console.log(req.query);
-  if (req.query.name == 'registry' && req.query.command == 'list') {
+  if (req.query.name == 'REGISTRY' && req.query.command == 'list') {
     res.writeHead(200);
-    res.end(registry.get_all_object_names().join('\n'));
+    res.end(obj2str(registry.get_all_object_names()));
   }
-  else if (req.query.name == 'registry' && req.query.command == 'shutdown') {
+  else if (req.query.name == 'REGISTRY' && req.query.command == 'shutdown') {
     res.writeHead(200);
-    res.end('OK');
+    res.end(obj2str({success:'DONE'}));
     shutdown();
+  }
+  else if (req.query.name == 'REGISTRY' && req.query.command == 'help') {
+    res.writeHead(200);
+    res.end(obj2str({
+      description:fs.readFileSync(__dirname+'/HELP.md', 'utf8'),
+      endpoints:ENDPOINTS
+    }));
   }
   else if (req.query.name && req.query.command == "waitfor") {
     wait_for_object(req.query.name, req.query.timeout, function(rv) {
       if (rv) {
         res.writeHead(200);
-        res.end(`${req.query.name} found`);
+        res.end(obj2str({success:`${req.query.name} found`}));
       }
       else {
         res.writeHead(404);
-        res.end(`${req.query.name} not found`);
+        res.end(obj2str({error:`${req.query.name} not found`}));
       }
     });
   }
@@ -110,22 +134,20 @@ app.get('/dispatch*', function(req, res) {
     if (s) {
       s.emit("dispatch", req.query, function(rv) {
         res.writeHead(200);
-        res.end(rv);
+        res.end(obj2str(rv));
       });
     }
     else {
       res.writeHead(200);
-      res.end('unknown name');
+      res.end(obj2str({error:'unknown name'}));
     }
   }
   else {
     res.writeHead(200);
-    res.end('DONE');
+    res.end(obj2str({success:'DONE'}));
   }
 });
 
 http.listen(3000);
 
-console.log("http://localhost:3000");
-console.log("http://localhost:3000/dispatch");
-console.log("http://localhost:3000/socket.io/socket.io.js");
+console.log(ENDPOINTS);
