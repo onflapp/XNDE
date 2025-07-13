@@ -7,7 +7,7 @@
   "author": "onflapp",
   "license": "MIT",
   "scripts": {
-    "postinstall": "node_modules/.bin/rollup editor.bundle.mjs -f iife -o editor.bundle.js -p @rollup/plugin-node-resolve"
+    "postinstall": "node_modules/.bin/rollup index.mjs -f iife -o editor.bundle.js -p @rollup/plugin-node-resolve"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.2",
